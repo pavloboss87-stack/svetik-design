@@ -1,0 +1,25 @@
+{
+  "telegramPersonal": {
+    "label": "Telegram",
+    "handle": "@svgodesign",
+    "url": "https://t.me/svgodesign",
+    "primary": true
+  },
+  "telegramBlog": {
+    "label": "Telegram-блог",
+    "handle": "@Golovina_design_ambersoftloft",
+    "url": "https://t.me/Golovina_design_ambersoftloft"
+  },
+  "vk": {
+    "label": "VK",
+    "handle": "vk.ru/sophiego",
+    "url": "https://vk.ru/sophiego"
+  },
+  "maxMe": {
+    "label": "Max",
+    "handle": "Профиль в Max",
+    "url": "https://max.ru/u/f9LHodD0cOI5JPMQHqD4A7IFf5r36q6KfSJJmdL3ubxzaHxW_Br5twFj9qU"
+  },
+  "email": "example@email.com",
+  "telegramBlogRssUrl": "https://t.me/s/Golovina_design_ambersoftloft"
+}
