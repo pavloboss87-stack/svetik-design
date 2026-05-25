@@ -36,3 +36,11 @@
 - **Verification**: `git check-ignore` confirms `node_modules`, `dist`, `.astro`, `.env`, `coverage` are ignored. No real `.env` present in working tree. `pnpm format:check` and `pnpm lint` both green after adding files.
 - **Notes**: README is intentionally minimal — full version is T29 (after stack stabilization). Constitution Принцип 1 (no LLM stamps) applies to README too: kept terse, no marketing voice.
 
+## 2026-05-25 — [T03] Self-host fonts Inter + Fraunces
+- **Status**: ✅ Done
+- **Files changed**: `package.json`, `pnpm-lock.yaml`, `src/styles/global.css`, `src/pages/index.astro`.
+- **Deviation from plan**: no `tailwind.config.mjs` (see T02 deviation). Font families wired through Tailwind 4 `@theme` directives in `global.css` (`--font-sans`, `--font-display`) — produces `font-sans` and `font-display` utility classes automatically.
+- **Versions pinned**: `@fontsource/inter` 5.2.8, `@fontsource-variable/fraunces` 5.2.9.
+- **Verification**: `pnpm build` produces 45 self-hosted font files in `dist/_astro/` (Inter weights 400/500/600 in latin + latin-ext, Fraunces variable in latin + latin-ext, both `.woff` and `.woff2`). `dist/index.html` has zero references to `fonts.googleapis.com` or `fonts.gstatic.com`. Generated CSS contains `.font-display{font-family:var(--font-display)}` and `.font-sans{font-family:var(--font-sans)}`. `pnpm typecheck`, `pnpm lint`, `pnpm format:check` — all green.
+- **Notes**: фамилии Inter/Fraunces — заглушка под ep02 (там визуальный код финализируется). Сейчас важна фиксация **паттерна** self-host через `@fontsource*` — менять семейство в ep02 будет правкой одной строки.
+

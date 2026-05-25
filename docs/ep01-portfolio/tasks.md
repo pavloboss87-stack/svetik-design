@@ -959,7 +959,7 @@
 - [ ] T23: Submit Worker (`workers/submit/`)
 
 ### Wave 3
-- [ ] T03: Self-host шрифты Inter + Fraunces
+- [x] T03: Self-host шрифты Inter + Fraunces
 - [ ] T04: Базовый Layout.astro skeleton
 - [ ] T07: Zod-схемы контент-коллекций
 
