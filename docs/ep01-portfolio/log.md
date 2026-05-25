@@ -21,3 +21,12 @@
 - **Learnings**: Tailwind 4 + Astro 6 wiring requires only (a) `@tailwindcss/vite` plugin in `astro.config.mjs#vite.plugins`, (b) `@import 'tailwindcss';` in a CSS entry, (c) importing that CSS from at least one page/layout. No PostCSS config, no `content` glob.
 - **Patterns**: see `progress.md` Codebase Patterns.
 
+## 2026-05-25 — [T05] ESLint + Prettier + npm scripts
+- **Status**: ✅ Done
+- **Files changed**: `eslint.config.js` (new), `.prettierrc.json` (new), `.prettierignore` (new), `package.json` (scripts), `pnpm-lock.yaml`, plus Prettier auto-reformat of `CLAUDE.md`, `progress.md`, `package.json` on first run.
+- **Versions pinned**: `eslint` 10.4.0, `@eslint/js` 10.0.1, `typescript-eslint` 8.60.0, `eslint-plugin-astro` 1.7.0, `globals` 17.6.0, `prettier` 3.8.3, `prettier-plugin-astro` 0.14.1.
+- **Scripts added**: `lint`, `lint:fix`, `format`, `format:check`, `typecheck`.
+- **Verification**: `pnpm lint` → 0 warnings/errors. `pnpm format` → reformatted 3 files, idempotent on re-run. `pnpm typecheck` → 0/0/0. Negative case: temporary `src/pages/__broken-temp.astro` with `const x: string = 123;` caused `pnpm typecheck` to exit 1 with `ts(2322)`; file deleted after verification.
+- **Learnings**: ESLint 10 + flat config + `eslint-plugin-astro` 1.x + `typescript-eslint` 8.x all stack cleanly via `...tseslint.configs.recommended` and `...astro.configs.recommended` spread into the default-exported array. No need for `parserOptions` overrides — the Astro plugin wires its own parser for `.astro` files.
+- **Patterns**: see `progress.md`.
+
