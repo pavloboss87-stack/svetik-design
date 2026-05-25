@@ -2,6 +2,22 @@
 
 <!-- Task completion entries appended by /my-execute -->
 
+## Session A — Foundation (closed 2026-05-25)
+
+Tasks: T01, T02, T03, T04, T05, T06. All exit-criteria from `session-plan.md` met:
+
+- `git log --oneline` shows the six expected commits.
+- `pnpm dev` serves `localhost:4321` with the Layout skeleton (Inter/Fraunces self-hosted, zero requests to `fonts.googleapis.com`/`fonts.gstatic.com`).
+- Preview server returns 200 on `/`, `/favicon.svg`, `/favicon.ico`, `/apple-touch-icon.png`.
+- `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm format:check` — all green.
+- Progress Tracker for T01..T06 ticked.
+
+**Outstanding from this session (not blocking Session B):**
+- Final favicon/monogram «СГ» — placeholder Astro template asset still in `public/`. Replaced in ep02 (визуальный код).
+- Default OG image `public/images/og/default.png` — does not yet exist. Layout defaults the URL but a 404 will occur until T24 creates the asset.
+
+**Next session**: Session B — Content schema + seeds (T07, T08, T09, T10).
+
 ## 2026-05-25 — [T01] Bootstrap Astro minimal + TS strict
 - **Status**: ✅ Done
 - **Commit**: `277d264 ep01 T01: bootstrap Astro minimal + TS strict`
