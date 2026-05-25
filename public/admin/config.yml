@@ -1,0 +1,340 @@
+# Decap CMS config — svetik-design.
+#
+# Источник истины полей: src/content.config.ts (Zod-схемы).
+# Это второе описание модели в Decap-yaml — поддерживается вручную (Key Decision plan.md Step 10).
+#
+# Backend: test-repo на этапе T11 — UI рендерится локально, реального коммита нет.
+# T13 переключит backend на name: github + base_url: <OAuth Worker URL из T12>.
+backend:
+  name: test-repo
+
+# Локализация интерфейса админки на русский.
+locale: ru
+
+# Глобальные настройки медиа (используются, если у коллекции нет своих).
+# Загрузки идут в src/assets/uploads/ — папка для разовых файлов вне предметных коллекций
+# (OG-картинки, временные ассеты). Для проектных фото и портрета автора — per-collection override
+# (см. ниже), фотографии падают в src/assets/projects/{slug}/ и src/assets/about/.
+media_folder: src/assets/uploads
+public_folder: /src/assets/uploads
+
+# editorial_workflow = изменения уходят через PR, а не прямой коммит в main —
+# безопаснее для сестры (нельзя случайно сломать live-сайт без ревью бра́та).
+# Включим в T13, когда backend = github. На test-repo поле игнорируется.
+# publish_mode: editorial_workflow
+
+collections:
+  # ───────────────────────────────────────────────────────────────────────────
+  # 1) Проекты (folder collection)
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: projects
+    label: Проекты
+    label_singular: Проект
+    folder: src/content/projects
+    create: true
+    delete: true
+    slug: '{{slug}}'
+    extension: md
+    format: frontmatter
+    media_folder: '../../assets/projects/{{slug}}'
+    public_folder: '../../assets/projects/{{slug}}'
+    summary: '{{title}} · {{year}}'
+    sortable_fields: ['order', 'year', 'title']
+    fields:
+      - { name: title, label: Название, widget: string }
+      - {
+          name: year,
+          label: Год,
+          widget: number,
+          value_type: int,
+          min: 2020,
+          max: 2030,
+        }
+      - name: type
+        label: Тип объекта
+        widget: select
+        options:
+          - { label: Квартира, value: apartment }
+          - { label: Дом, value: house }
+          - { label: Студия, value: studio }
+          - { label: Коммерческое, value: commercial }
+      - {
+          name: area,
+          label: 'Площадь, м²',
+          widget: number,
+          value_type: int,
+          min: 1,
+        }
+      - {
+          name: location,
+          label: Город,
+          widget: string,
+          required: false,
+          hint: 'Например, Москва. Можно оставить пустым.',
+        }
+      - {
+          name: summary,
+          label: Короткое описание (до 200 символов),
+          widget: text,
+          pattern: ['^.{1,200}$', 'Не более 200 символов'],
+        }
+      - { name: cover, label: Главное фото (обложка), widget: image }
+      - name: gallery
+        label: Галерея
+        label_singular: Фото
+        widget: list
+        min: 3
+        max: 20
+        summary: '{{fields.image}}'
+        field: { name: image, label: Фото, widget: image }
+      - {
+          name: published,
+          label: Опубликован,
+          widget: boolean,
+          default: true,
+          hint: 'Снимите галочку, чтобы скрыть проект с сайта (черновик).',
+        }
+      - {
+          name: isConcept,
+          label: Концепт-проект (показывать плашку),
+          widget: boolean,
+          default: true,
+          hint: 'Плашка «концепт-проект, фото в обработке» исчезает, когда снимете галочку.',
+        }
+      - {
+          name: order,
+          label: Порядок сортировки (необязательно),
+          widget: number,
+          value_type: int,
+          required: false,
+          hint: 'Чем больше число — тем выше в листинге. Если пусто — сортируется по году.',
+        }
+      - name: seo
+        label: SEO (необязательно)
+        widget: object
+        required: false
+        collapsed: true
+        fields:
+          - { name: title, label: SEO-заголовок, widget: string, required: false }
+          - {
+              name: description,
+              label: SEO-описание,
+              widget: text,
+              required: false,
+            }
+          - { name: ogImage, label: OG-картинка, widget: image, required: false }
+      - {
+          name: body,
+          label: Описание (концепция),
+          widget: markdown,
+          required: false,
+        }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 2) Услуги (folder collection)
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: services
+    label: Услуги
+    label_singular: Услуга
+    folder: src/content/services
+    create: true
+    delete: true
+    slug: '{{slug}}'
+    extension: md
+    format: frontmatter
+    summary: '{{title}} · порядок {{order}}'
+    sortable_fields: ['order', 'title']
+    fields:
+      - { name: title, label: Название услуги, widget: string }
+      - {
+          name: tagline,
+          label: Подзаголовок (до 120 символов),
+          widget: text,
+          pattern: ['^.{1,120}$', 'Не более 120 символов'],
+        }
+      - {
+          name: order,
+          label: Порядок отображения,
+          widget: number,
+          value_type: int,
+          min: 1,
+          hint: '1 — первой в списке.',
+        }
+      - {
+          name: published,
+          label: Опубликована,
+          widget: boolean,
+          default: true,
+        }
+      - {
+          name: priceNote,
+          label: Заметка о стоимости (необязательно),
+          widget: string,
+          required: false,
+        }
+      - { name: body, label: Описание, widget: markdown, required: false }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 3) Главная (file collection — pages/hero.md)
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: page_home
+    label: Главная
+    files:
+      - name: hero
+        label: Главная (Hero)
+        file: src/content/pages/hero.md
+        fields:
+          - { name: title, label: Заголовок страницы, widget: string }
+          - { name: body, label: Текст Hero, widget: markdown }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 4) О себе (file collection — pages/about.md)
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: page_about
+    label: О себе
+    files:
+      - name: about
+        label: О себе
+        file: src/content/pages/about.md
+        media_folder: '../../assets/about'
+        public_folder: '../../assets/about'
+        fields:
+          - { name: title, label: Заголовок страницы, widget: string }
+          - {
+              name: authorPhoto,
+              label: Фото автора,
+              widget: image,
+              required: false,
+              hint: 'Портрет, ~800×800. Заменяет серую заглушку на странице /about.',
+            }
+          - { name: body, label: Текст «О себе», widget: markdown }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 5) Услуги — вступление (file collection — pages/services-intro.md)
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: page_services_intro
+    label: Услуги — вступление
+    files:
+      - name: services-intro
+        label: Услуги — вступление
+        file: src/content/pages/services-intro.md
+        fields:
+          - { name: title, label: Заголовок, widget: string }
+          - { name: body, label: Вступительный текст, widget: markdown }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 6) Контакты — вступление (file collection — pages/contact-intro.md)
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: page_contact_intro
+    label: Контакты — вступление
+    files:
+      - name: contact-intro
+        label: Контакты — вступление
+        file: src/content/pages/contact-intro.md
+        fields:
+          - { name: title, label: Заголовок, widget: string }
+          - { name: body, label: Вступительный текст, widget: markdown }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 7) Политика ПДн (file collection — pages/privacy.md)
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: page_privacy
+    label: Политика ПДн
+    files:
+      - name: privacy
+        label: Политика обработки персональных данных
+        file: src/content/pages/privacy.md
+        fields:
+          - { name: title, label: Заголовок страницы, widget: string }
+          - {
+              name: body,
+              label: Текст политики,
+              widget: markdown,
+              hint: 'Требует юридической вычитки перед публичным запуском.',
+            }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 8) Контакты — каналы (file collection — settings/contacts.json)
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: settings_contacts
+    label: Контакты — каналы
+    files:
+      - name: contacts
+        label: Контакты и каналы связи
+        file: src/content/settings/contacts.json
+        fields:
+          - name: telegramPersonal
+            label: Telegram (личный)
+            widget: object
+            fields:
+              - { name: label, label: Подпись, widget: string }
+              - { name: handle, label: Имя пользователя, widget: string }
+              - { name: url, label: Ссылка, widget: string }
+              - {
+                  name: primary,
+                  label: 'Основной канал?',
+                  widget: boolean,
+                  default: true,
+                }
+          - name: telegramBlog
+            label: Telegram (блог)
+            widget: object
+            fields:
+              - { name: label, label: Подпись, widget: string }
+              - { name: handle, label: Имя пользователя, widget: string }
+              - { name: url, label: Ссылка, widget: string }
+          - name: vk
+            label: VK
+            widget: object
+            fields:
+              - { name: label, label: Подпись, widget: string }
+              - { name: handle, label: Имя пользователя, widget: string }
+              - { name: url, label: Ссылка, widget: string }
+          - name: maxMe
+            label: Max
+            widget: object
+            fields:
+              - { name: label, label: Подпись, widget: string }
+              - { name: handle, label: Имя пользователя, widget: string }
+              - { name: url, label: Ссылка, widget: string }
+          - {
+              name: email,
+              label: Email (оператора),
+              widget: string,
+              hint: 'Адрес для получения заявок и юридических уведомлений.',
+            }
+          - {
+              name: telegramBlogRssUrl,
+              label: Telegram-блог — ссылка для парсера,
+              widget: string,
+              hint: 'Формат https://t.me/s/<channel>. Сайт парсит её на каждом билде и показывает свежие посты.',
+            }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 9) SEO (file collection — settings/seo.json)
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: settings_seo
+    label: SEO
+    files:
+      - name: seo
+        label: Глобальные SEO-настройки
+        file: src/content/settings/seo.json
+        fields:
+          - { name: siteName, label: Название сайта, widget: string }
+          - {
+              name: siteUrl,
+              label: Базовый URL сайта,
+              widget: string,
+              hint: 'Без слэша на конце, например https://svetik-design.pages.dev',
+            }
+          - {
+              name: defaultOgImage,
+              label: OG-картинка по умолчанию,
+              widget: string,
+              hint: 'Абсолютный путь от корня сайта, например /images/og/default.png',
+            }
+          - {
+              name: description,
+              label: Мета-описание главной,
+              widget: text,
+            }

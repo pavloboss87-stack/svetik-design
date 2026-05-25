@@ -969,7 +969,7 @@
 - [x] T10: Сидирование settings (contacts.json + seo.json)
 
 ### Wave 5
-- [ ] T11: Decap admin shell + config.yml
+- [x] T11: Decap admin shell + config.yml
 
 ### Wave 6
 - [ ] T13: Wire Decap backend to OAuth + local smoke-test
