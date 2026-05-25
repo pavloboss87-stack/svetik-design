@@ -961,12 +961,12 @@
 ### Wave 3
 - [x] T03: Self-host шрифты Inter + Fraunces
 - [x] T04: Базовый Layout.astro skeleton
-- [ ] T07: Zod-схемы контент-коллекций
+- [x] T07: Zod-схемы контент-коллекций
 
 ### Wave 4
-- [ ] T08: Сидирование 4 проектов + placeholder-фото
-- [ ] T09: Сидирование 3 услуг + 4 страничных текстов
-- [ ] T10: Сидирование settings (contacts.json + seo.json)
+- [x] T08: Сидирование 4 проектов + placeholder-фото
+- [x] T09: Сидирование 3 услуг + 5 страничных текстов (incl. privacy)
+- [x] T10: Сидирование settings (contacts.json + seo.json)
 
 ### Wave 5
 - [ ] T11: Decap admin shell + config.yml

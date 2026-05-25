@@ -69,3 +69,72 @@ Tasks: T01, T02, T03, T04, T05, T06. All exit-criteria from `session-plan.md` me
 - **Notes**: favicon assets remain the Astro template's default monogram (placeholder per plan — final монограмма «СГ» в ep02). Skipped Astro's `_underscore-prefix` convention which excludes pages from routing; renamed test file to `temp-og-test.astro` for the override check.
 - **Learnings**: see `progress.md`.
 
+## Session B — Content schema + seeds (closed 2026-05-25)
+
+Tasks: T07, T08, T09, T10. All exit-criteria from `session-plan.md` Session B met:
+
+- `git log --oneline -10` shows four new commits `ep01 T07..T10` after the Session A block.
+- `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm format:check` — all green on the final state.
+- `getCollection('projects').length === 4`, `getCollection('services').length === 3`, `getCollection('pages').length === 5`, `settings` collection contains entries `contacts` and `seo`. Verified through a temporary `src/pages/temp-collection-check.astro` (removed after each task).
+- `getEntry('pages', 'about').data.authorPhoto` resolves to the generated 800×800 «фото в работе» placeholder.
+- `getEntry('pages', 'privacy')` returns the seeded stub with the «⚠️ ТРЕБУЕТ ЮРИДИЧЕСКОЙ ВЫЧИТКИ» banner.
+- Negative tests passed:
+  - **Schema field**: temp `services/__broken-temp.md` without `title` triggers `InvalidContentEntryDataError: title: Required` on build (T07 verification — file removed).
+  - **URL validation**: temp swap of `telegramPersonal.url` to `not-a-valid-url` triggers `InvalidContentEntryDataError: telegramPersonal.url: Invalid URL` on build (T10 verification — restored from backup).
+- `grep -RinE` over `src/content/` for the Constitution Принцип 1 stamp dictionary returns empty (`уют и функциональн`, `стиль и комфорт`, `дом мечты`, `создаём пространств`, `превращаем в произведение`, `больше чем дизайн`, `не просто X а Y`, `индивидуальный подход`, `delivering excellenc`).
+- Progress Tracker for T07..T10 ticked in `tasks.md`.
+
+**Plan-vs-reality deltas captured in patterns:** Astro 6 deprecates `z` from `astro:content` (use `astro/zod`); Zod 4 deprecates `.url()`/`.email()` instance methods (use `z.url()`/`z.email()`). Both are TS hints only.
+
+**Outstanding from this session (not blocking Session C):**
+
+- `Portfolio/1/` only has 2 source photos, so `project-01/03.jpg` is a generated «фото в обработке» placeholder. Сестра заменяет файл через image-widget Decap, когда появится третий рендер.
+- `seo.json#defaultOgImage` points at `/images/og/default.png`, which does not yet exist. Created in T24. Layout already defaults to the same path (Session A note) — planned forward reference.
+- Decap admin (T11) needs a `media_folder`/`public_folder` decision that bridges Decap-uploaded photos (target `public/`) with the seed pattern of `image()`-resolved `src/assets/` paths. Two options: (a) point Decap at `src/assets/projects/`, or (b) accept a hybrid where seeded paths stay relative while new uploads land in `public/`. Flagged here so T11 does not get surprised.
+
+**Next session**: Session C — Decap admin + OAuth + smoke-test (T11, T12, T13). Before launching, бра́т должен создать GitHub OAuth App вручную (Application name `svetik-design admin`, callback URL фиксируется после деплоя Worker в T12).
+
+## 2026-05-25 — [T07] Zod schemas for content collections
+- **Status**: ✅ Done
+- **Commit**: `ep01 T07: Zod content collections (projects, services, pages, settings)`
+- **Files changed**: `src/content.config.ts` (new), `src/content/{projects,services,pages,settings}/.gitkeep` (new — placeholders for empty dirs, superseded by seeds in T08–T10).
+- **Schema decisions**:
+  - `projects` — `image()` for cover / gallery / seo.ogImage via schema-callback `({ image }) => ...`. `gallery: z.array(image()).min(3)`. `published`/`isConcept` default to `true`.
+  - `services` — text + order only, no image fields.
+  - `pages` — `authorPhoto: image().optional()` (only consumed on about.md; ignored elsewhere).
+  - `settings` — single `glob` JSON collection with `z.union([contactsSchema, seoSchema])`. Alternative (two `file()` collections) would yield `getEntry('contacts', 'telegramPersonal')` instead of plan-mandated `getEntry('settings', 'contacts')`. Glob + union picks the shape via non-overlapping required keys.
+- **Deviation from plan**: imports `z` from `astro/zod` (not `astro:content`) — Astro 6 deprecated the latter. Zod 4 likewise deprecated `.url()` / `.email()` instance methods in favour of `z.url()` / `z.email()` top-level constructors. Cosmetic (TS hints only), but keeps typecheck at 0/0/0.
+- **Verification**: `pnpm typecheck` → 0/0/0. `pnpm lint`/`pnpm format:check` green. `pnpm build` green on empty collections. Negative-test: `src/content/services/__broken-temp.md` without `title` → build fails with `InvalidContentEntryDataError: title: Required`. File removed.
+- **Patterns**: see `progress.md` (Astro 6 / Zod 4 import migration; settings via glob+union).
+
+## 2026-05-25 — [T08] Seed 4 projects + placeholder photos
+- **Status**: ✅ Done
+- **Commit**: `ep01 T08: seed 4 projects + placeholder photos`
+- **Files changed**: `src/content/projects/project-{01..04}.md` (new), `src/assets/projects/project-{01..04}/*.jpg` (12 source photos copied + renamed from `Portfolio/{1..4}/`, plus 1 generated placeholder for `project-01/03.jpg`), `scripts/generate-project-placeholder.mjs` (new).
+- **Seed shape**: 4 concept projects, all `published: true, isConcept: true`. Метражи 62 / 28 / 38 / 84 м²; types cover 3 of 4 enum values (`apartment`, `studio`, `house` — `commercial` reserved for future). `order` 4→1 sorts «свежие сверху» for T17 listing. Each body is an explicit `PLACEHOLDER` marker plus 1–2 neutral sentences, no stamps (Принцип 1).
+- **Photo seeding**: `cover` reuses the same relative-path string as `gallery[0]`. Astro+Vite dedupes by resolved path — one physical file, one optimized output. Lets us satisfy `gallery.min(3)` without duplicate bytes.
+- **`Portfolio/1` edge case**: only 2 source photos → `gallery.min(3)` needs a third. `scripts/generate-project-placeholder.mjs` emits a 1200×900 «фото в обработке» JPEG via `sharp(Buffer.from(svg)).jpeg(...).toFile(...)`. Honest placeholder, not a file duplicate, signals «нужно заменить». Сестра uploads the real 3rd render through the image-widget in Decap (T11) — frontmatter path stays the same.
+- **Verification**: build/typecheck/lint/format green. Temp `src/pages/temp-collection-check.astro` (removed) confirmed `getCollection('projects').length === 4`, titles readable. Stamp-grep over `src/content/` empty.
+
+## 2026-05-25 — [T09] Seed 3 services + 5 page docs (incl. privacy stub)
+- **Status**: ✅ Done
+- **Commit**: `ep01 T09: seed 3 services + 5 page docs (incl. privacy stub)`
+- **Files changed**: `src/content/services/{full-design,supervision,consulting}.md`, `src/content/pages/{hero,about,services-intro,contact-intro,privacy}.md`, `src/assets/about/placeholder.jpg`, `scripts/generate-about-placeholder.mjs`.
+- **Services**: `order: 1/2/3` gives expected ordering on /services (T19). `tagline` ≤120 chars, `priceNote` only on full-design. Body lists «что входит» dryly — no «уникальный авторский подход» voice.
+- **Pages**:
+  - `hero.md` — single-paragraph stub for the homepage. Final hero copy in ep02.
+  - `about.md` — explicit «программа профессиональной переподготовки» instead of vague «прошла обучение» (Принцип 7 — junior speaks as junior, no senior cosplay). `authorPhoto: ../../assets/about/placeholder.jpg`.
+  - `services-intro.md`, `contact-intro.md` — short lead paragraphs for T19 page wiring.
+  - `privacy.md` — 152-ФЗ-shaped stub with prominent «⚠️ ТРЕБУЕТ ЮРИДИЧЕСКОЙ ВЫЧИТКИ ПЕРЕД ПУБЛИЧНЫМ ЗАПУСКОМ» banner. Sections: оператор / категории ПДн / цели / основание (consent checkbox from T20) / срок хранения / получатели (TG/SMTP) / права субъекта / контакт / трансграничка / изменения. ep01 goal — close the technical gap for CookieBanner (T21) and ContactForm consent (T20), not write a production legal text. Final edit in ep03 after legal review.
+- **Author photo placeholder**: `scripts/generate-about-placeholder.mjs` mirrors the project-placeholder script — separate file, separate output, same shape. Sister replaces via Decap image-widget.
+- **Verification**: build/typecheck/lint/format green. Temp page confirmed `services.length === 3` in order `full-design=1, supervision=2, consulting=3`; `pages.length === 5`; `about.authorPhoto present: true`; `privacy present: true`. Stamp-grep over `src/content/` empty.
+
+## 2026-05-25 — [T10] Seed settings (contacts.json + seo.json)
+- **Status**: ✅ Done
+- **Commit**: `ep01 T10: seed settings (contacts.json + seo.json)`
+- **Files changed**: `src/content/settings/contacts.json`, `src/content/settings/seo.json`.
+- **Contacts**: 4 каналов из `Contacts/Cont.txt` + email-заглушка. `telegramPersonal: @svgodesign, primary: true`. `maxMe.url` — реальный max.ru deeplink (research упоминал «max.me», но Cont.txt — max.ru; используем фактический). Handle для max — «Профиль в Max» (читаемо, без копирования невменяемого ID). `email: example@email.com` — заглушка, попадает в activation checklist (T28). `telegramBlogRssUrl: https://t.me/s/Golovina_design_ambersoftloft` — публичный preview-канал для build-time парсера в T15 (не RSSHub).
+- **SEO**: `siteName`, `siteUrl=https://svetik-design.pages.dev` (превью-домен до миграции ep03), `defaultOgImage=/images/og/default.png` (файл создаётся в T24, Layout уже ссылается из Session A — единая точка истины), `description` — короткое RU-описание для главной.
+- **Schema validation**: все URL через `z.url()`, email через `z.email()`. Negative-test: подмена `telegramPersonal.url` на `not-a-valid-url` → `InvalidContentEntryDataError: telegramPersonal.url: Invalid URL`. Восстановлено.
+- **Verification**: build/typecheck/lint/format green. Temp page подтвердил: `settings` содержит 2 entry (ids `contacts`, `seo`); `getEntry('settings','contacts').data.email === 'example@email.com'`; `getEntry('settings','seo').data.siteName` корректное. `z.union` discriminates correctly on non-overlapping required keys (`telegramPersonal` vs `siteName`).
+
