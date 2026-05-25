@@ -1,19 +1,12 @@
 ---
-import '../styles/global.css';
+import Layout from '../components/layout/Layout.astro';
 ---
 
-<html lang="ru">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Светлана Головина — каркас</title>
-  </head>
-  <body class="font-sans">
-    <main class="mx-auto max-w-2xl px-6 py-24">
-      <h1 class="font-display text-2xl">Каркас. Доделывается.</h1>
-    </main>
-  </body>
-</html>
+<Layout
+  title="Светлана Головина — дизайн интерьеров"
+  description="Сайт-портфолио в работе. Скоро здесь будут проекты, услуги и контакты."
+>
+  <main class="mx-auto max-w-2xl px-6 py-24">
+    <h1 class="font-display text-2xl">Каркас. Доделывается.</h1>
+  </main>
+</Layout>

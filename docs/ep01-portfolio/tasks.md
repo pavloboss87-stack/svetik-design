@@ -960,7 +960,7 @@
 
 ### Wave 3
 - [x] T03: Self-host шрифты Inter + Fraunces
-- [ ] T04: Базовый Layout.astro skeleton
+- [x] T04: Базовый Layout.astro skeleton
 - [ ] T07: Zod-схемы контент-коллекций
 
 ### Wave 4

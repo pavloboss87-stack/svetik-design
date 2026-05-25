@@ -44,3 +44,12 @@
 - **Verification**: `pnpm build` produces 45 self-hosted font files in `dist/_astro/` (Inter weights 400/500/600 in latin + latin-ext, Fraunces variable in latin + latin-ext, both `.woff` and `.woff2`). `dist/index.html` has zero references to `fonts.googleapis.com` or `fonts.gstatic.com`. Generated CSS contains `.font-display{font-family:var(--font-display)}` and `.font-sans{font-family:var(--font-sans)}`. `pnpm typecheck`, `pnpm lint`, `pnpm format:check` — all green.
 - **Notes**: фамилии Inter/Fraunces — заглушка под ep02 (там визуальный код финализируется). Сейчас важна фиксация **паттерна** self-host через `@fontsource*` — менять семейство в ep02 будет правкой одной строки.
 
+## 2026-05-25 — [T04] Base Layout.astro skeleton + favicons
+- **Status**: ✅ Done
+- **Files changed**: `src/components/layout/Layout.astro` (new), `src/pages/index.astro` (uses Layout), `public/apple-touch-icon.png` (new, 2.5 KB, 180×180), `scripts/generate-apple-touch-icon.mjs` (new, build helper), `package.json` (sharp devDep), `pnpm-lock.yaml`.
+- **Layout API**: `<Layout title description ogImage? canonical?>` — accepts overrides; falls back to `${siteUrl}/images/og/default.png` for OG image and `${siteUrl}${pathname}` for canonical. Renders charset, viewport, theme-color, title, description, canonical, three favicon links (svg/ico/apple-touch-icon), full OG (type, locale ru_RU, title, description, url, image), Twitter card.
+- **Versions pinned**: `sharp` 0.34.5 (added as devDep for the icon generator script — sharp was already a transitive dep of Astro, but needs to be an explicit dep to be importable from a non-Astro script).
+- **Verification**: `pnpm build` clean. Built HTML contains all expected meta tags. Preview server returned 200 on `/`, `/favicon.svg`, `/favicon.ico`, `/apple-touch-icon.png`. Override test: temporary page `temp-og-test.astro` with explicit `ogImage` and `canonical` props produced the expected `og:image` and `canonical` values; file removed after verification. `pnpm typecheck`, `pnpm lint`, `pnpm format:check` — all green.
+- **Notes**: favicon assets remain the Astro template's default monogram (placeholder per plan — final монограмма «СГ» в ep02). Skipped Astro's `_underscore-prefix` convention which excludes pages from routing; renamed test file to `temp-og-test.astro` for the override check.
+- **Learnings**: see `progress.md`.
+
