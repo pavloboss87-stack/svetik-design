@@ -138,3 +138,53 @@ Tasks: T07, T08, T09, T10. All exit-criteria from `session-plan.md` Session B me
 - **Schema validation**: все URL через `z.url()`, email через `z.email()`. Negative-test: подмена `telegramPersonal.url` на `not-a-valid-url` → `InvalidContentEntryDataError: telegramPersonal.url: Invalid URL`. Восстановлено.
 - **Verification**: build/typecheck/lint/format green. Temp page подтвердил: `settings` содержит 2 entry (ids `contacts`, `seo`); `getEntry('settings','contacts').data.email === 'example@email.com'`; `getEntry('settings','seo').data.siteName` корректное. `z.union` discriminates correctly on non-overlapping required keys (`telegramPersonal` vs `siteName`).
 
+## Session C — Decap admin + OAuth + smoke-test (partial close 2026-05-25)
+
+Tasks attempted: T11, T12, T13. **Closed: T11 only.** T12 and T13 остановлены ровно по сценарию `session-plan.md` § Session C («Если не сделано — остановись на T12 и попроси пользователя»): на момент сессии у бра́та не созданы GitHub OAuth App и не подключён аккаунт Cloudflare с авторизованным wrangler.
+
+**T11 exit-criteria (выполнено):**
+
+- `git log --oneline` показывает новый коммит `c351985 ep01 T11: Decap admin shell + config.yml (9 collections, test-repo backend)`.
+- `pnpm dev` (после рестарта с изменённым `astro.config.mjs`): curl `/admin/`, `/admin`, `/admin/index.html`, `/admin/config.yml` все 200; тело `/admin/` содержит тег `<script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js">`.
+- `pnpm preview` (production-like static): то же, плюс `/admin/` нативно резолвит trailing-slash без dev-плагина — подтверждает, что в CF Pages ничего дополнительно подкручивать не надо.
+- `public/admin/config.yml` распарсен через `yaml@2.9.0` в Node, assertions: 9 коллекций (`projects, services, page_home, page_about, page_services_intro, page_contact_intro, page_privacy, settings_contacts, settings_seo`); русские лейблы; `type` — select с 4 опциями (`apartment/house/studio/commercial`); `isConcept` — boolean widget, default true; `gallery` — list widget, min 3; `about.authorPhoto` — image widget, required false; `media_folder` per-collection: `../../assets/projects/{{slug}}` для проектов и `../../assets/about` для about.
+- `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm format:check` — все зелёные.
+- Progress Tracker T11 отмечен в `tasks.md`.
+
+**Что НЕ сделано в этой сессии и почему:**
+
+- **T12 (OAuth Worker)** — требует трёх внешних шагов, недоступных Claude:
+  1. Бра́т вручную создаёт GitHub OAuth App: Settings → Developer settings → OAuth Apps → New OAuth App. Application name: `svetik-design admin`. Homepage URL: `https://svetik-design.pages.dev` (превью-заглушка ок). Authorization callback URL: временно `http://localhost:8788/callback` для wrangler dev; финальный URL — после первого деплоя Worker'а (см. ниже), нужно вернуться в OAuth App и заменить. Получить Client ID и Client Secret.
+  2. Бра́т авторизует wrangler в Cloudflare: `wrangler login` (откроет браузер, нужно залогиниться в аккаунт CF, у которого есть права создавать Workers).
+  3. После того, как Claude напишет код `workers/oauth/` и `wrangler.toml`, бра́т выполняет: `cd workers/oauth && wrangler secret put OAUTH_CLIENT_ID` (вводит Client ID), `wrangler secret put OAUTH_CLIENT_SECRET` (вводит Client Secret), `wrangler deploy`. Деплой даёт URL вида `https://svetik-design-oauth.<account-handle>.workers.dev`. Этот URL надо вернуть в GitHub OAuth App как Authorization callback URL и зафиксировать в log.md для T13.
+- **T13 (Wire Decap backend)** — блокирован на T12: нужен URL OAuth Worker'а, чтобы прописать в `public/admin/config.yml`: `backend: { name: github, repo: <owner>/svetik-design, branch: main, base_url: <oauth-worker-url>, publish_mode: editorial_workflow }`. Без T12 — некуда указывать base_url. Smoke-test (login → edit → save → commit → rebuild) физически невозможен без работающего OAuth-флоу.
+
+**Brother-checklist для разблокировки следующей сессии (Session C продолжение):**
+
+| Шаг | Действие | Что получится |
+|---|---|---|
+| 1 | GitHub → Settings → Developer settings → OAuth Apps → New OAuth App. Name: `svetik-design admin`. Homepage URL: `https://svetik-design.pages.dev`. Authorization callback URL: `http://localhost:8788/callback` (на время dev; будет заменено на шаг 4). | Client ID + Client Secret. **Запиши их в защищённом месте — никогда не клади в репо/чат.** |
+| 2 | Установи wrangler глобально: `pnpm add -g wrangler` (или `npm i -g wrangler`). | `wrangler --version` показывает версию ≥4. |
+| 3 | `wrangler login` в PowerShell. Браузер откроется на странице аккаунта Cloudflare. Логин → Allow. | wrangler привязан к твоему CF-аккаунту. `wrangler whoami` показывает email. |
+| 4 | Открой новую сессию Claude по той же ссылке Session C (см. session-plan.md). Скажи Claude «У меня готовы OAuth App и Cloudflare. Client ID = ..., Client Secret передам через wrangler secret put сам.» Claude напишет `workers/oauth/src/index.ts`, `wrangler.toml`, `workers/oauth/README.md`. После того, как код готов, ты выполняешь: `cd workers/oauth`, `wrangler secret put OAUTH_CLIENT_ID` (вводишь Client ID), `wrangler secret put OAUTH_CLIENT_SECRET` (вводишь Client Secret), `wrangler deploy`. Деплой выдаст URL вида `https://svetik-design-oauth.<your-handle>.workers.dev`. | Worker задеплоен. URL записан в log.md. |
+| 5 | Вернись в GitHub OAuth App (шаг 1) → Edit → замени Authorization callback URL на `https://svetik-design-oauth.<your-handle>.workers.dev/callback` (точный путь Claude скажет, когда покажет код Worker'а). | OAuth App знает реальный production callback. |
+| 6 | Claude в той же сессии переходит к T13: обновит `public/admin/config.yml` (backend → github, base_url → URL Worker'а), запустит `pnpm dev`, попросит тебя зайти на `localhost:4321/admin/`, кликнуть «Login with GitHub», авторизоваться, изменить summary в `project-01.md`, сохранить. Проверим вместе, что commit появился в репо. | Smoke-test пройден. T13 отмечен в Progress Tracker. Session C закрыта. |
+
+**Pre-flight для следующей сессии (Session C continuation или Session D, на выбор бра́та):**
+
+- Если хочется идти строго по plan'у — выполни шаги 1–3 выше и открой новую сессию Claude с теми же инструкциями Session C, но теперь у Claude будут все внешние ресурсы и он доведёт T12 + T13 до конца.
+- Если внешние ресурсы пока не готовы и не до них — Session C не блокирует Session D (Submit Worker, T23): D зависит только от Session A. Можно открыть отдельную сессию по Session D, она тоже требует CF-аккаунта (для submit-worker деплоя), но не требует GitHub OAuth App. Так что если у бра́та есть только CF-аккаунт, можно делать D, а C продолжить позже.
+
+**Notable decisions / learnings из этой сессии:**
+
+- **Backend test-repo для T11 — правильный выбор для UI-render теста.** Альтернатива `name: github` с заглушка-base_url выдаёт login-экран, который красиво смотрится, но при попытке клика по коллекции уходит в ошибку OAuth. test-repo рендерит UI и даёт открыть форму коллекции с реальными полями (включая isConcept checkbox и authorPhoto image-widget) — это нужно, чтобы убедиться, что схема корректна.
+- **Astro/Vite dev не отдаёт `public/<dir>/index.html` по URL `/<dir>/`.** Подтверждённый quirk: `/admin/` и `/admin` оба 404, `/admin/index.html` 200. Решение — крошечный dev-only Vite-плагин `serveAdminIndexInDev` в `astro.config.mjs` (6 строк, JSDoc-typing inline без `vite` в deps). `pnpm preview` и CF Pages не страдают этой проблемой — поэтому плагин ровно в dev-блоке через `configureServer`. См. progress.md Codebase Patterns.
+- **Decap config.yml ≠ Zod-схема, синхронизация ручная** — подтверждение Key Decision plan.md Step 10. Сложилось чуть сложнее, чем выглядит в плане: для каждого folder-collection (projects) Decap требует `media_folder`/`public_folder` относительно `folder:` (т.е. `../../assets/projects/{{slug}}` от `src/content/projects/`), а для file-collection (`page_about`) — относительно директории файла (тоже `../../assets/about` от `src/content/pages/`). Без этого Decap при сохранении нового image-upload запишет в frontmatter абсолютный путь вроде `/src/assets/...`, и Astro `image()` schema упадёт. После T13 надо будет вручную залить тестовое фото через admin UI и подтвердить, что frontmatter получает форму `../../assets/projects/<slug>/<file>` — это входит в smoke-test T13.
+- **Astro check (`pnpm typecheck`) проверяет только .astro файлы, не `.mjs`.** Опытным путём: ошибки TS-7006 (implicit any) в `astro.config.mjs` показывает IDE через VS Code language server, но `pnpm typecheck` их пропускает. Поэтому добавление inline JSDoc-типов в config — это вопрос IDE-UX, не CI-гейта. Учтём при будущих правках конфига.
+
+**Next session (decided by user):**
+
+- Вариант A (рекомендованный по plan'у): Session C продолжение — после выполнения шагов 1–3 brother-checklist выше открыть новое окно Claude с инструкциями Session C (тот же текст), Claude увидит T11 ✅ и пойдёт сразу с T12.
+- Вариант B (параллельный): Session D — Submit Worker (T23). Не зависит от Session C. Требует только CF-аккаунта.
+- Вариант C (нелинейный): Session E — Layout components + TG-feed + SEO utils (T14, T15, T22). Не зависит от Session C/D. Требует только Sessions A + B (✅). Полезно, потому что разблокирует Session F (три main страницы) — самую визуально-понятную сестре часть.
+
