@@ -188,3 +188,17 @@ Tasks attempted: T11, T12, T13. **Closed: T11 only.** T12 and T13 останов
 - Вариант B (параллельный): Session D — Submit Worker (T23). Не зависит от Session C. Требует только CF-аккаунта.
 - Вариант C (нелинейный): Session E — Layout components + TG-feed + SEO utils (T14, T15, T22). Не зависит от Session C/D. Требует только Sessions A + B (✅). Полезно, потому что разблокирует Session F (три main страницы) — самую визуально-понятную сестре часть.
 
+## 2026-05-25 — [T12] GitHub OAuth Worker source (workers/oauth/)
+
+- **Status**: ✅ Code done. Deploy выполняет бра́т локально из `workers/oauth/` (`wrangler secret put OAUTH_CLIENT_SECRET` + `wrangler deploy`). Worker URL фиксируется в этом логе следующим апдейтом, когда бра́т сообщит результат.
+- **Files changed**: `workers/oauth/src/index.ts` (new, ~110 строк), `workers/oauth/wrangler.toml` (new), `workers/oauth/tsconfig.json` (new), `workers/oauth/README.md` (new, инструкция бра́ту), `package.json` (+`@cloudflare/workers-types` devDep), `pnpm-lock.yaml`.
+- **OAuth App reference**: Client ID `Ov23li2njCS1gRivex1E` (публичная часть, в `wrangler.toml` под `[vars]`). Client Secret хранится только в Cloudflare через `wrangler secret put` — никогда не попадает в git/чат. Worker name `svetik-design-oauth`, account_id `9b7219916a409f8774e11265b2d069da`.
+- **Protocol details**: маршрут `/auth?provider=github&scope=repo` → 302 на `github.com/login/oauth/authorize` с `redirect_uri=<worker-origin>/callback`. `/callback?code=…` обменивает code на access_token (POST `github.com/login/oauth/access_token` с Accept: application/json), возвращает HTML-страницу, которая делает Decap CMS handshake: ждёт `authorization:github` от opener, отвечает `authorization:github:success:{"token","provider":"github"}`. На любую ошибку — тот же постмесседж-канал с `:error:` и человекочитаемым кодом. Кэширование `no-store` на callback.
+- **Verification (без деплоя)**: `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm build` — все зелёные (Astro check игнорирует `workers/`, ESLint покрывает TS файл, Prettier переформатировал таблицу в README — ожидаемо).
+- **Outstanding (blocks T13)**:
+  1. Бра́т: `cd workers/oauth && wrangler secret put OAUTH_CLIENT_SECRET` (вводит секрет интерактивно).
+  2. Бра́т: `wrangler deploy` → получает URL `https://svetik-design-oauth.<handle>.workers.dev`.
+  3. Бра́т: GitHub OAuth App `svetik-design admin` → Edit → Authorization callback URL ← `<worker-url>/callback`.
+  4. Бра́т: сообщает Worker URL в чат. После этого Claude переходит к T13.
+- **Patterns**: см. `progress.md` Codebase Patterns (новый паттерн «Decap-compatible OAuth proxy на CF Worker, два-шаговый handshake»).
+

@@ -1,0 +1,12 @@
+name = "svetik-design-oauth"
+main = "src/index.ts"
+compatibility_date = "2026-05-25"
+account_id = "9b7219916a409f8774e11265b2d069da"
+
+# Client ID — публичная часть OAuth App, можно держать в репо.
+[vars]
+OAUTH_CLIENT_ID = "Ov23li2njCS1gRivex1E"
+
+# OAUTH_CLIENT_SECRET — секрет, ставится отдельно:
+#   wrangler secret put OAUTH_CLIENT_SECRET
+# Не клади его сюда и не в .env.
