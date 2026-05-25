@@ -30,3 +30,9 @@
 - **Learnings**: ESLint 10 + flat config + `eslint-plugin-astro` 1.x + `typescript-eslint` 8.x all stack cleanly via `...tseslint.configs.recommended` and `...astro.configs.recommended` spread into the default-exported array. No need for `parserOptions` overrides — the Astro plugin wires its own parser for `.astro` files.
 - **Patterns**: see `progress.md`.
 
+## 2026-05-25 — [T06] Repo hygiene
+- **Status**: ✅ Done
+- **Files changed**: `.gitignore` (expanded), `.env.example` (new), `README.md` (new skeleton).
+- **Verification**: `git check-ignore` confirms `node_modules`, `dist`, `.astro`, `.env`, `coverage` are ignored. No real `.env` present in working tree. `pnpm format:check` and `pnpm lint` both green after adding files.
+- **Notes**: README is intentionally minimal — full version is T29 (after stack stabilization). Constitution Принцип 1 (no LLM stamps) applies to README too: kept terse, no marketing voice.
+

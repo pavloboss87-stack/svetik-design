@@ -954,7 +954,7 @@
 ### Wave 2
 - [x] T02: Astro integrations (Tailwind 4 + sitemap + check) и токены-заглушки
 - [x] T05: ESLint + Prettier + npm-скрипты
-- [ ] T06: Repo hygiene — .gitignore, .env.example, README-скелет
+- [x] T06: Repo hygiene — .gitignore, .env.example, README-скелет
 - [ ] T12: GitHub OAuth Worker (workers/oauth/) + деплой + secrets
 - [ ] T23: Submit Worker (`workers/submit/`)
 
