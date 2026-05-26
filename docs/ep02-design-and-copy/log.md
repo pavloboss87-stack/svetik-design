@@ -116,3 +116,54 @@
 - **Negative test verified**: закомментирован `@import '@fontsource/pt-serif/...'` в `global.css`, `pnpm build` + `pnpm exec playwright test tests/e2e/typography.spec.ts` → все 4 (2 страницы × 2 браузера) краснеют с осмысленным сообщением `PT Serif не зарегистрирован/не загружен; fontFamily="PT Serif", ui-serif, Georgia, "Times New Roman", serif`. Восстановлено в `global.css`, все 4 зелёные.
 - **28/28 e2e pass** на финальном состоянии после рестора.
 - **Patterns/Learnings**: `Edit replace_all=true` заменяет ВСЕ совпадения; `replace_all=false` (по умолчанию) — только первое и фейлит при множественных совпадениях. Когда логика теста повторяется в N тестах — выносить в helper-функцию (`readH1PtSerifState`), а не дублировать с `replace_all=true` (риск тихо забыть про "вторую копию"). Зафиксировано в `progress.md`.
+
+## 2026-05-26 — [T10] Phase 1 PR — Lighthouse CI + merge
+
+- **Status**: ✅ Done
+- **PR**: [#9 — ep02 Phase 1 — typography foundation + hardening gates](https://github.com/pavloboss87-stack/svetik-design/pull/9)
+- **Squash merge SHA on main**: `7094eb3` (включает всю Session A + Session B как один коммит)
+- **Files changed for T10 itself** (на момент merge): `.lighthouserc.json` (numberOfRuns 1→3, +`aggregationMethod: median`), `scripts/inspect-pt-serif-cyrillic.mjs` (prettier fixup для CI lint step)
+- **CI результат финального run**:
+  - `lint` ✅
+  - `typecheck` ✅
+  - `test` (Vitest) ✅
+  - `e2e` (Playwright, chromium+webkit) ✅
+  - `lighthouse` ✅ (Performance/A11y/Best-Practices/SEO ≥ 0.95 на 7 URL, median across 3 runs)
+  - `Workers Builds: svetik-design` ✅ (CF auto-deploy)
+- **Variance story**: первый CI-run после открытия PR упал на Lighthouse Performance = 0.82 для `/` (Hero), при `numberOfRuns: 1` это была дисперсия на shared GHA-раннере — локально `pnpm exec lhci collect` тогда же давал 99/99/98/100/100/100/100. Mitigation: `numberOfRuns: 3` + `aggregationMethod: median` (стабилизация измерения, не релакс бюджета). После применения — все 4 категории median ≥ 0.95 на всех 7 URL.
+- **Lint fixup**: первый CI-run также упал на prettier-проверке `scripts/inspect-pt-serif-cyrillic.mjs` — местная sanity-проверка прошла только на тех файлах, что я редактировал руками, а инспектор-скрипт остался незаафрончен. После `pnpm exec prettier --write scripts/inspect-pt-serif-cyrillic.mjs` — зелёный.
+- **Pre-flight diagnostic был усечён локальной проверкой**: `pnpm exec prettier --check <changed-files>` в моём workflow — недостаточен. Урок: запускать **`pnpm format:check`** на всё дерево перед push'ем, либо настроить pre-push hook. Не зафиксировал как codebase pattern, потому что Windows + autocrlf делает `pnpm format:check` локально шумным (см. ep01 Session A pattern).
+- **Verify visual**: после merge main `7094eb3` Workers Builds задеплоил production на `svetik-design.svetik-design.workers.dev` — preview-URL для main = production-URL на этом setup. Визуальная проверка (PT Serif на `/works/project-01/` h1, Hero CTA, отсутствие watermark plашки изменения — все на месте) выполняется руками после полного завершения деплоя; e2e/Lighthouse подтвердили программно.
+
+---
+
+## Session B — 2026-05-26 — резюме
+
+**Цель**: T04, T05, T06, T07, T09, T10 (Wave 2 + Wave 3 + Wave 4 эпика, Phase 1 wiring + merge).
+
+**Сделано**:
+- **T04**: fontkit-инспекция PT Serif cyrillic — 10/10 required глифов (ё/Ё/ъ/ь/й/Й + А/я/Щ/щ) во всех трёх subset-файлах (400-normal, 700-normal, 400-italic). Никакого fallback-плана (Onest) не понадобилось. Скрипт `scripts/inspect-pt-serif-cyrillic.mjs` + `pnpm verify:fonts` — оставлен для будущих эпиков.
+- **T05**: 2 preload-link'а (PT Serif cyrillic 400 + Inter cyrillic 400) в `Layout.astro`. Пути fingerprinted через Astro ESM-импорт `?url`.
+- **T06**: admin shell подгружает PT Serif + Inter с jsDelivr; `CMS.registerPreviewStyle()` пропихивает их в preview iframe. CSP `/admin/*` расширен `cdn.jsdelivr.net`.
+- **T07**: Hero.astro откалиброван по Schema 1 (typographic). Scoped `<style>` использует токены T02. Добавлен CTA «Смотреть работы» (новая разметка). `data-testid="hero-cta"` + assertion в `pages.spec.ts`. Placeholder в `hero.md` помечен sentinel TODO(T12).
+- **T09**: `tests/e2e/typography.spec.ts` — два теста (`/` + `/works/project-01/`) на cross-browser (chromium+mobile-safari), assertion через iteration `document.fonts` (не `.check()`). Negative-test verified.
+- **T10**: PR #9 открыт, мерджен squash-методом в `main` после стабилизации Lighthouse runner-variance (numberOfRuns 1→3 + median). Workers Builds задеплоил.
+
+**Quality gates на конец сессии**:
+- `pnpm test` ✅ 82/82 vitest (включая stop-list).
+- `pnpm test:e2e` ✅ 28/28 Playwright (chromium + mobile-safari, включая typography.spec.ts и Hero CTA).
+- `pnpm lint` ✅ exit 0.
+- `pnpm typecheck` ✅ 0/0/0.
+- `pnpm build` ✅ 11 страниц.
+- CI на финальном HEAD: все 6 checks зелёные.
+- Lighthouse mobile CI: Performance/A11y/Best-Practices/SEO ≥ 95 (median × 3 runs × 7 URL).
+
+**Progress Tracker**: T04, T05, T06, T07, T09, T10 отмечены. T08 + T11 (Phase 2 / ретушь) — параллельная manual-track в Session C.
+
+**Открытые наблюдения**:
+- Зафиксировал в `progress.md` два паттерна: (а) Node/pnpm не в `$PATH` PowerShell-сессий → augment явно; (б) `Edit replace_all=true` + дубликат логики в N тестах — риск тихо обновить «первую копию» и оставить вторую; mitigation — helper-функция.
+- Lighthouse CI variance: при `numberOfRuns: 1` shared GHA-runner может давать 0.82 для Hero `/`. Mitigation = numberOfRuns 3 + median.
+- Latin subset PT Serif всё ещё не подключён — намерено. Если в Phase 3+4 копирайт будет содержать latin-глифы (например, технический текст «ООО „ДИСКИЛЛ"» в About), latin-400-normal добавим точечно в том же PR. Пока не нужен.
+- Версия `@fontsource/pt-serif@5.2.8` зафиксирована в двух местах: `package.json` (для прод-bundle) и `public/admin/index.html` CDN URL. При апгрейде нужно править оба, иначе admin рассинхронится с прод.
+
+**Следующая сессия**: Session C — Asset retouch (T08 — manual user работа в IOPaint) + Phase 2 PR (T11 — Claude коммит assets). Может идти параллельно с любой техническoй сессией; должна закрыться до Session D (Copy session 1), потому что копирайт project-04 пишется с retouched-кадрами перед глазами.

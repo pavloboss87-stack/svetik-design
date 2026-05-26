@@ -684,7 +684,7 @@ T01 → T07 → T09 → T10 → T12 → T15 → T17 → T20 → T22 → T23 → 
 - [x] T09: typography.spec.ts regression test
 
 ### Wave 4
-- [ ] T10: Phase 1 PR — Lighthouse + merge
+- [x] T10: Phase 1 PR — Lighthouse + merge
 - [ ] T11: Phase 2 PR — retouched assets + merge
 
 ### Wave 5 (Phase 3 copy session — one sitting)
