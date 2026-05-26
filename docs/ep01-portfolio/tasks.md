@@ -981,8 +981,8 @@
 
 ### Wave 8
 - [x] T16: Home (Hero + ManifestoBlock + TelegramFeed)
-- [ ] T17: Works listing + ProjectCard
-- [ ] T19: About + Services + Contact (no form)
+- [x] T17: Works listing + ProjectCard
+- [x] T19: About + Services + Contact (no form)
 - [ ] T21: 404 + CookieBanner
 - [ ] T21a: /privacy stub page (152-ФЗ)
 

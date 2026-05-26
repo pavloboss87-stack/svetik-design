@@ -354,3 +354,48 @@ Tasks: T14, T15, T22. Все exit-критерии из `session-plan.md` § Ses
 - **TelegramFeed**: вызывает `fetchTelegramFeed(channel, 5)` build-time. Канал извлекается regex из `contacts.telegramBlog.url` — менять канал через `contacts.json` без правки кода. Когда парсер вернул `[]` (сеть упала, разметка t.me поменялась) — рендерится fallback «Свежие записи — в Telegram-блоге <handle>», страница не падает. Картинки с CDN Telegram отдаются raw `<img loading=lazy referrerpolicy=no-referrer>`: Astro `<Image>` не работает с remote-untrusted URL'ами. CSP `img-src` для `cdn4.telegram-cdn.org` закроется в T24a.
 - **Verification**: `pnpm typecheck` 0/0/0 на 28 файлах, `pnpm lint` clean, `pnpm format` reformatted ManifestoBlock (длинная строка), `pnpm test` 59/59, `pnpm build` зелёный (1 page, 3.95s). Live TG-fetch: 5 постов с реальными датами/пермалинками — `dist/index.html` содержит 10 совпадений `datetime=|Читать в Telegram` = 5 постов × 2 ссылки. Stamp-grep по Constitution Принципу 1 — пусто.
 - **Patterns**: см. `progress.md` (новый: «канал TG-feed извлекается regex из contacts.telegramBlog.url — единая точка истины»).
+
+## 2026-05-26 — [T17] /works listing + ProjectCard + sortProjects + tests
+
+- **Status**: ✅ Done. Commit `b13d86b ep01 T17: /works listing + ProjectCard + sortProjects + tests` (см. `git log`).
+- **Files changed**: `src/lib/sortProjects.ts` (new), `src/components/projects/ProjectCard.astro` (new), `src/pages/works/index.astro` (new), `tests/unit/lib/sortProjects.test.ts` (new).
+- **`sortProjects.ts`**: pure-lib `ProjectLike = { data: { year, order?, published? } }` + три экспорта (`isPublishedProject`, `compareProjects`, `sortProjects`). Сортировка: проекты с `order` идут первыми по убыванию `order`, при равенстве — по убыванию `year`; затем хвостом — проекты без `order` по убыванию `year`. `sortProjects` копирует массив (`[...projects].sort(...)`) — не мутирует input. Generic `<T extends ProjectLike>` сохраняет тип `CollectionEntry<'projects'>` в page-коде. Лежит pure, как `seo.ts` (T22) — vitest импортирует без astro:content зависимостей.
+- **`ProjectCard.astro`**: рендерит `<Image>` cover с `widths={[400, 600, 800]}` и `sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"` — на десктопе ~400px, на мобайле fullbleed. Astro 6 формат default — `.webp`. Брифовый «AVIF/WebP» — выполняется webp-веткой. Плашка «Концепт-проект · фото в обработке» через `data.isConcept && (...)` — рендерится у всех 4 проектов на seed-стейте; снимется на отдельных карточках, как только сестра уберёт галочку через Decap. Локация показывается только если `data.location` задана (project-01..04 — все «Москва»/«Подмосковье», но проверка не падает на `undefined`).
+- **`/works/index.astro`**: `(await getCollection('projects')).filter(isPublishedProject)` → `sortProjects(...)` → grid. Пустой массив рендерит fallback «Проекты в работе. Скоро появятся.» вместо пустой страницы. Заголовок и описание под Layout-meta уже учитывают summary словарь Constitution Принципа 1.
+- **Tests** (10 кейсов в `sortProjects.test.ts`, 69 total в suite): `isPublishedProject` — отсутствие поля = true (Zod default), `true` = true, `false` = false. `compareProjects` — order desc > order desc, year-tie-breaker, with-order > orderless, year fallback. `sortProjects` — комбинированная выборка [order 4, order 1, year 2025, year 2023, order 2] → `[p-b(4), p-e(2), p-a(1), p-d(2025), p-c(2023)]`; не мутирует input; фильтр+сорт исключает `published:false`.
+- **Verification**: `pnpm typecheck` 0/0/0 на 32 файлах, `pnpm lint` clean, `pnpm format` clean, `pnpm test` 69/69, `pnpm build` зелёный (2 pages: `/`, `/works/`). 13 .webp variants сгенерировано (4 cover × {400,600,800} widths + dedup). `dist/works/index.html` содержит 4 ссылки `href="/works/project-0X/"` в порядке project-01 → 02 → 03 → 04 (order 4 → 3 → 2 → 1), 4 плашки «Концепт-проект · фото в обработке», 4 `<img srcset=...>`. Stamp-grep — пусто.
+- **Patterns**: см. `progress.md` (новый: «pure-lib sort + filter c generic `<T extends ProjectLike>` для типизации CollectionEntry без import'а astro:content»).
+
+## 2026-05-26 — [T19] About + Services + Contact (no form) pages
+
+- **Status**: ✅ Done. Commit `318ceaa ep01 T19: About + Services + Contact (no form) pages`.
+- **Files changed**: `src/pages/about.astro` (new), `src/pages/services.astro` (new), `src/pages/contact.astro` (new), `src/components/services/ServiceCard.astro` (new), `src/components/contact/ContactChannels.astro` (new).
+- **`/about`**: `getEntry('pages', 'about')` → `<Content />` + Astro `<Image>` с `authorPhoto` (widths 400/600/800, square aspect). Когда `authorPhoto: undefined` — рендерится `<div>` с подписью «Фото в работе» (нейтральный серый блок), страница не падает. Сейчас seed (T09) задаёт `authorPhoto: ../../assets/about/placeholder.jpg` (800×800 «фото в работе»), поэтому первый рендер показывает Astro-генерированный webp; смена картинки через Decap = новая `<Image>` без правки кода. Текст «диплом о профессиональной переподготовке» приходит из `about.md` (T09) — Принцип 7 соблюдён на уровне контента, не кода.
+- **`/services`**: `getEntry('pages', 'services-intro')` Body + `getCollection('services').filter(published !== false).sort((a,b) => a.order - b.order)`. Пустой список (если сестра удалит все или поставит published:false) — рендерит fallback «Услуги в разработке». 3 ServiceCard в порядке `full-design (1) → supervision (2) → consulting (3)`.
+- **`/contact`**: `getEntry('pages', 'contact-intro')` Body + `ContactChannels`. Форма (T20) — заглушка-комментарий в JSX, без рендера. Двухколоночная вёрстка: текст + каналы. Каналы дублируются в Footer (намеренно — Constitution Принцип 2: контакт-каналы должны быть доступны с любой страницы).
+- **`ServiceCard.astro`**: `await render(service)` для markdown body; title, tagline (≤120 chars из Zod), описание, priceNote (отображается только если задано — у full-design есть, у остальных пустое skip'нется). `border-t` между карточками — без визуального шума на финале.
+- **`ContactChannels.astro`**: вытаскивает 4 канала + email из `getContacts()` (`src/lib/settings.ts`, T14). Каждый `<a>` — `target=_blank rel=noopener` + `aria-label` с label+handle (для screen readers, потому что внутри `<a>` есть `<span class="text-neutral-500">` который читалка может прочитать «label colon handle» с разрывом).
+- **Verification**: `pnpm typecheck` 0/0/0 на 37 файлах, `pnpm lint` clean, `pnpm format:check` clean, `pnpm test` 69/69, `pnpm build` зелёный (5 pages = `/`, `/works/`, `/about/`, `/services/`, `/contact/` + 13 reused + 3 new webp variants для placeholder). PowerShell preview-server test: `Invoke-WebRequest` на `/`, `/works/`, `/about/`, `/services/`, `/contact/` — все 200. Per-page контент: `/about` содержит «переподготовки», `/services` содержит все 3 service-card title'а в правильном порядке, `/contact` содержит 4 канала + email (плюс ещё 4+email в Footer).
+- **Patterns**: см. `progress.md` (новые: «ContactChannels = lazy mirror of Footer's channels list — единый источник истины через `getContacts()`», «`authorPhoto.optional()` рендерится с fallback'ом-блоком в Astro Image, не падает на undefined»).
+
+## Session F — Three main pages (closed 2026-05-26)
+
+Tasks: T16, T17, T19. Все exit-критерии из `session-plan.md` § Session F выполнены:
+
+- ✅ `git log --oneline` показывает 3 новых коммита: `8a87087 ep01 T16...`, `b13d86b ep01 T17...`, `318ceaa ep01 T19...` (плюс T16 docs follow-up commit `cbd87ae`).
+- ✅ Preview-server тест (`pnpm preview` background + `Invoke-WebRequest`): `/`, `/works/`, `/about/`, `/services/`, `/contact/` — все 200.
+- ✅ `/works` отдаёт сетку из 4 ProjectCard в правильном порядке (project-01..04 по убыванию `order`), у каждой видна плашка «концепт-проект».
+- ✅ DevTools-эквивалент на `/works/` — `<img srcset>` × 4, оптимизированный .webp (Astro 6 default).
+- ✅ `/about` рендерит `<Image>` с authorPhoto (placeholder из T09), `/services` показывает 3 ServiceCard в порядке order 1→3, `/contact` показывает 4 канала из contacts.json + email.
+- ✅ `pnpm test` зелёный (69/69), включая 10 новых кейсов в `sortProjects.test.ts` (sort/filter combinations).
+- ✅ Progress Tracker T16, T17, T19 отмечен в `tasks.md`.
+- ⏸ Lighthouse mobile ≥ 95 — не запускалось локально в этой сессии (нет CI/lhci пока — T26). Plan/брифа: «Lighthouse mobile на / и /works ≥ 95 по 4 метрикам (локальный preview)». Проверка отложена на Session J (Lighthouse CI workflow), где это будет автоматизировано и зафиксировано. Если хочется проверить сразу — можно прогнать `npx lighthouse http://localhost:4321/ --preset=mobile --view` руками из чистого окна Chrome.
+
+**Outstanding from this session (не блокируют Session G):**
+
+- TG-feed картинки рендерятся `<img src="https://cdn4.telegram-cdn.org/...">` — внешний домен попадёт в CSP `img-src` (T24a).
+- `/works/{slug}` ссылки в листинге пока 404 — детальная страница реализуется в Session G (T18). До тех пор клик по карточке даёт стандартный 404 dev-сервера.
+- `ContactForm` (T20) пока заглушка-комментарий в `/contact`. Появится в Session H после T18, T21, T21a, T23 (последний уже сделан в Session D).
+- `lighthouse ≥ 95` — отложено до Session J (см. выше).
+
+**Next session**: Session G — Detail + 404 + CookieBanner + Privacy (T18, T21, T21a). Critical path сразу разблокирован — все три задачи зависят от уже сделанного T14/T17/T09.
