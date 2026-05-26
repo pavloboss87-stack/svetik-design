@@ -1,0 +1,62 @@
+# public/_headers — Cloudflare Pages security headers
+#
+# Два scope'а:
+#   /admin/*  — ослабленная CSP под Decap CMS UI (unpkg + GitHub API + OAuth Worker)
+#   /*        — строгая CSP под публичные страницы (Yandex.Metrica + Submit Worker + TG-CDN)
+#
+# Cloudflare Pages: более специфичные пути переопределяют общие для совпадающих
+# заголовков. /admin/* перекрывает /* по Content-Security-Policy; общие
+# security-headers (X-Content-Type-Options, Referrer-Policy, Permissions-Policy,
+# X-Frame-Options) дублируются явно — так в diff'ах видно, что и админка тоже
+# защищена, не унаследовано «по случайности».
+#
+# При добавлении нового внешнего сервиса (Cloudflare Images, ещё одна аналитика,
+# embed, новый бэкенд формы…) — найди подходящую CSP-директиву ниже и добавь
+# домен. Перечисление того, кто куда ходит:
+#   script-src   — откуда грузятся <script src>
+#   style-src    — откуда грузятся <link rel=stylesheet> + inline <style>
+#   img-src      — <img src>, background-image:url(), CSS image-set()
+#   font-src     — @font-face src
+#   connect-src  — fetch(), XHR, WebSocket, EventSource, sendBeacon, Worker
+#   form-action  — куда может быть отправлен <form> submit
+#   frame-ancestors — кто может встраивать нас в <iframe>
+# После изменений в этом файле нужен ре-деплой CF Pages — headers применяются на edge.
+
+# ─── Decap admin ────────────────────────────────────────────────────────────
+# Decap CMS грузится с unpkg.com (один <script src>), его внутренний код
+# использует inline scripts + eval — отсюда 'unsafe-inline' и 'unsafe-eval'.
+# Контентно общается с api.github.com (чтение/коммит контента) и с нашим
+# OAuth Worker'ом (обмен GitHub OAuth code на access token).
+# Картинки/аватары пользователей GitHub разрешены для media-widget.
+# X-Frame-Options DENY оставляем — мы не хотим, чтобы /admin/ можно было
+# встроить в чужой iframe (защита от clickjacking-кражи токенов).
+/admin/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.githubusercontent.com https://avatars.githubusercontent.com; font-src 'self' data: https://unpkg.com; connect-src 'self' https://api.github.com https://svetik-design-oauth.svetik-design.workers.dev; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Frame-Options: DENY
+
+# ─── Public site ────────────────────────────────────────────────────────────
+# script-src 'self' для bundled JS из dist/_astro/*, 'unsafe-inline' для
+# YandexMetrica и CookieBanner (is:inline по дизайну — no-flash consent
+# должен выполниться синхронно до paint, см. progress.md «no-flash consent
+# banner»). Плюс Astro инлайнит маленькие <script type=module> прямо в HTML
+# (ContactForm в /contact). 'unsafe-inline' — осознанный компромисс; tighter
+# policy через SHA-256 hashes можно попробовать в ep02, когда финализируется
+# inline JS-payload (он перестанет меняться от правки to правки).
+# style-src 'unsafe-inline' — Astro оставляет style=".." атрибуты на элементах
+# (например, на cookie-banner page-scoped style).
+# img-src: 'self' для Astro-генерированных webp; data: для inline SVG-favicon;
+# mc.yandex.ru — Metrica-пиксель в <noscript> fallback'е; cdn4.telegram-cdn.org —
+# фото из TG-feed на главной (TelegramFeed.astro).
+# connect-src: Metrica beacon + Submit Worker (POST /api/submit с /contact).
+# form-action: Submit Worker — браузер не даст отправить форму куда-то ещё, даже
+# если что-то перехватит submit handler.
+# frame-ancestors 'none' + X-Frame-Options DENY — дубль запрета на iframing.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://mc.yandex.ru https://cdn4.telegram-cdn.org; font-src 'self'; connect-src 'self' https://mc.yandex.ru https://svetik-design-submit.svetik-design.workers.dev; form-action 'self' https://svetik-design-submit.svetik-design.workers.dev; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Frame-Options: DENY
