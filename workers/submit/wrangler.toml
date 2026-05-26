@@ -4,7 +4,7 @@ compatibility_date = "2026-05-25"
 account_id = "9b7219916a409f8774e11265b2d069da"
 
 # Public site origin — only requests with matching Origin header are accepted.
-# Edit and redeploy when migrating to a custom domain (ep03).
+# TODO(ep03): заменить на custom domain и `wrangler deploy` после миграции.
 [vars]
 PUBLIC_SITE_URL = "https://svetik-design.svetik-design.workers.dev"
 

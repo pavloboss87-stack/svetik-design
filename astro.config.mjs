@@ -21,6 +21,7 @@ const serveAdminIndexInDev = {
 
 // https://astro.build/config
 export default defineConfig({
+  // TODO(ep03): заменить на свой домен при подключении custom domain.
   site: 'https://svetik-design.svetik-design.workers.dev',
   integrations: [
     sitemap({

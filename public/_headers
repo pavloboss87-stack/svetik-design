@@ -47,6 +47,7 @@
 # form-action: Submit Worker — браузер не даст отправить форму куда-то ещё, даже
 # если что-то перехватит submit handler.
 # frame-ancestors 'none' + X-Frame-Options DENY — дубль запрета на iframing.
+# TODO(ep03): после подключения custom domain заменить svetik-design-submit.svetik-design.workers.dev в connect-src и form-action ниже.
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://mc.yandex.ru https://*.telesco.pe; font-src 'self'; connect-src 'self' https://mc.yandex.ru https://svetik-design-submit.svetik-design.workers.dev; form-action 'self' https://svetik-design-submit.svetik-design.workers.dev; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
   X-Content-Type-Options: nosniff
@@ -66,6 +67,7 @@
 # Первый `! Content-Security-Policy` КРИТИЧЕН — удаляет строгий CSP из /*.
 # Без него браузер видит два разных CSP-заголовка и применяет пересечение,
 # что блокирует unpkg.com и ломает Decap (белая страница).
+# TODO(ep03): после подключения custom domain заменить svetik-design-oauth.svetik-design.workers.dev в connect-src ниже.
 /admin/*
   ! Content-Security-Policy
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.githubusercontent.com https://avatars.githubusercontent.com; font-src 'self' data: https://unpkg.com; connect-src 'self' https://api.github.com https://svetik-design-oauth.svetik-design.workers.dev; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
