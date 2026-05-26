@@ -1003,7 +1003,7 @@
 - [x] T30: E2E Playwright тесты
 
 ### Wave 13
-- [ ] T28: guide-for-svetlana.md + activation checklist
+- [x] T28: guide-for-svetlana.md + activation checklist
 - [ ] T29: README.md (incl. branch protection setup)
 
 ### Wave 14
