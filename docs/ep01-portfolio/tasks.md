@@ -1007,7 +1007,7 @@
 - [x] T29: README.md (incl. branch protection setup)
 
 ### Wave 14
-- [ ] T31: Финальная QA + закрытие ep01
+- [x] T31: Финальная QA + закрытие ep01
 
 ---
 
