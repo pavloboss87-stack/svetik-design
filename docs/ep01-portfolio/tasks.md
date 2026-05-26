@@ -983,11 +983,11 @@
 - [x] T16: Home (Hero + ManifestoBlock + TelegramFeed)
 - [x] T17: Works listing + ProjectCard
 - [x] T19: About + Services + Contact (no form)
-- [ ] T21: 404 + CookieBanner
-- [ ] T21a: /privacy stub page (152-ФЗ)
+- [x] T21: 404 + CookieBanner
+- [x] T21a: /privacy stub page (152-ФЗ)
 
 ### Wave 9
-- [ ] T18: Project detail + ProjectMeta + ImageGallery
+- [x] T18: Project detail + ProjectMeta + ImageGallery
 - [ ] T20: ContactForm + ПДн consent + wiring
 
 ### Wave 10
