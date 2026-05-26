@@ -87,8 +87,10 @@ function renderPopup(result: { token?: string; error?: string }): Response {
   const body = `authorization:github:${status}:${payload}`;
 
   // Two-step handshake matching decap-cms-lib-auth: popup announces
-  // "authorizing:github", waits for "authorization:github" from opener,
-  // then posts the final success/error message.
+  // "authorizing:github" → opener echoes the SAME string back → popup
+  // posts the final "authorization:github:(success|error):<json>" message.
+  // (The echo uses the same literal "authorizing:github", not a renamed
+  // "authorization:github". One missing 'i' breaks the whole flow.)
   const html = `<!doctype html>
 <html lang="ru">
 <head>
@@ -101,11 +103,15 @@ function renderPopup(result: { token?: string; error?: string }): Response {
 <script>
 (function () {
   var payload = ${JSON.stringify(body)};
+  var sent = false;
   function send(target, origin) {
+    if (sent) return;
+    sent = true;
     target.postMessage(payload, origin);
+    setTimeout(function () { try { window.close(); } catch (_) {} }, 500);
   }
   function receive(e) {
-    if (e.data !== 'authorization:github' || !e.source) return;
+    if (e.data !== 'authorizing:github' || !e.source) return;
     send(e.source, e.origin || '*');
     window.removeEventListener('message', receive);
   }
