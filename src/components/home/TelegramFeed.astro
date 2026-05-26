@@ -1,0 +1,78 @@
+---
+import { fetchTelegramFeed } from '../../lib/telegram-feed';
+import { formatPostDate } from '../../lib/format';
+import { getContacts } from '../../lib/settings';
+
+const contacts = await getContacts();
+const blogUrl = contacts.telegramBlog.url;
+const blogHandle = contacts.telegramBlog.handle;
+const channelMatch = /t\.me\/([A-Za-z0-9_]+)/.exec(blogUrl);
+const channel = channelMatch ? channelMatch[1] : '';
+
+const posts = channel ? await fetchTelegramFeed(channel, 5) : [];
+---
+
+<section class="border-b border-neutral-200">
+  <div class="mx-auto max-w-5xl px-6 py-16 md:py-20">
+    <div class="mb-10 flex items-baseline justify-between gap-6">
+      <h2 class="font-display text-2xl text-neutral-900 md:text-3xl">Из блога</h2>
+      <a
+        href={blogUrl}
+        rel="noopener"
+        target="_blank"
+        class="text-sm text-neutral-600 hover:text-neutral-900"
+      >
+        {blogHandle} →
+      </a>
+    </div>
+
+    {
+      posts.length === 0 ? (
+        <p class="text-neutral-700">
+          Свежие записи —{' '}
+          <a
+            href={blogUrl}
+            rel="noopener"
+            target="_blank"
+            class="underline underline-offset-4 hover:text-neutral-900"
+          >
+            в Telegram-блоге {blogHandle}
+          </a>
+          .
+        </p>
+      ) : (
+        <ul class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {posts.map((post) => (
+            <li class="flex flex-col">
+              {post.picture && (
+                <img
+                  src={post.picture}
+                  alt=""
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  class="mb-3 aspect-[4/3] w-full rounded-sm bg-neutral-100 object-cover"
+                />
+              )}
+              <time datetime={post.date} class="text-xs text-neutral-500">
+                {formatPostDate(post.date)}
+              </time>
+              {post.text && (
+                <p class="mt-2 line-clamp-6 text-sm leading-relaxed text-neutral-800">
+                  {post.text}
+                </p>
+              )}
+              <a
+                href={post.permalink}
+                rel="noopener"
+                target="_blank"
+                class="mt-3 text-sm text-neutral-600 underline underline-offset-4 hover:text-neutral-900"
+              >
+                Читать в Telegram →
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</section>
