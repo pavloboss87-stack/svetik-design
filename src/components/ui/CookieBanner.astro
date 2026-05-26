@@ -1,0 +1,82 @@
+---
+// CookieBanner: 152-ФЗ consent gate for Yandex.Metrica + cookies.
+// Hidden by default (data-hidden) and unhidden by inline script when localStorage
+// shows no prior consent. Click «ОК» writes the consent and dispatches
+// `consent:metrica:granted` — YandexMetrica.astro listens (once) and loads tag.js.
+---
+
+<aside
+  id="cookie-banner"
+  data-consent-key="consent.metrica.v1"
+  data-hidden
+  role="region"
+  aria-label="Согласие на использование cookies"
+  class="fixed inset-x-0 bottom-0 z-50 hidden border-t border-neutral-200 bg-white shadow-lg data-[visible]:block"
+>
+  <div
+    class="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-4 text-sm text-neutral-800 md:flex-row md:items-center md:justify-between"
+  >
+    <p class="max-w-3xl">
+      Сайт использует cookies и Яндекс.Метрику. Подробнее — в <a
+        href="/privacy"
+        class="underline underline-offset-4 hover:text-neutral-900">политике обработки ПДн</a
+      >.
+    </p>
+    <button
+      type="button"
+      data-cookie-accept
+      class="inline-flex shrink-0 items-center justify-center bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+    >
+      Согласен
+    </button>
+  </div>
+</aside>
+
+<script is:inline>
+  (function () {
+    const banner = document.getElementById('cookie-banner');
+    if (!banner) return;
+    const key = banner.dataset.consentKey || 'consent.metrica.v1';
+    function show() {
+      banner.setAttribute('data-visible', '');
+      banner.removeAttribute('data-hidden');
+    }
+    function hide() {
+      banner.removeAttribute('data-visible');
+      banner.setAttribute('data-hidden', '');
+    }
+    try {
+      if (localStorage.getItem(key) === 'granted') {
+        hide();
+        return;
+      }
+    } catch {
+      return;
+    }
+    show();
+    const btn = banner.querySelector('[data-cookie-accept]');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      try {
+        localStorage.setItem(key, 'granted');
+      } catch {
+        /* localStorage blocked — banner already dismissed for this view */
+      }
+      hide();
+      try {
+        window.dispatchEvent(new Event('consent:metrica:granted'));
+      } catch {
+        /* dispatchEvent unavailable — Metrica will load on next visit if consent persists */
+      }
+    });
+  })();
+</script>
+
+<style>
+  #cookie-banner[data-hidden] {
+    display: none;
+  }
+  #cookie-banner[data-visible] {
+    display: block;
+  }
+</style>

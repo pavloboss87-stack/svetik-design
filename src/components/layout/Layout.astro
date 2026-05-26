@@ -5,6 +5,7 @@ import Footer from './Footer.astro';
 import MetaTags from '../seo/MetaTags.astro';
 import SchemaPerson from '../seo/SchemaPerson.astro';
 import YandexMetrica from '../analytics/YandexMetrica.astro';
+import CookieBanner from '../ui/CookieBanner.astro';
 
 interface Props {
   title?: string;
@@ -39,5 +40,6 @@ const { title, description, ogImage, canonical } = Astro.props;
       <slot />
     </div>
     <Footer />
+    <CookieBanner />
   </body>
 </html>
