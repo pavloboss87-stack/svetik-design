@@ -1,14 +1,21 @@
-# public/_headers — Cloudflare Pages security headers
+# public/_headers — Cloudflare security headers
 #
 # Два scope'а:
-#   /admin/*  — ослабленная CSP под Decap CMS UI (unpkg + GitHub API + OAuth Worker)
 #   /*        — строгая CSP под публичные страницы (Yandex.Metrica + Submit Worker + TG-CDN)
+#   /admin/*  — ослабленная CSP под Decap CMS UI (unpkg + GitHub API + OAuth Worker)
 #
-# Cloudflare Pages: более специфичные пути переопределяют общие для совпадающих
-# заголовков. /admin/* перекрывает /* по Content-Security-Policy; общие
-# security-headers (X-Content-Type-Options, Referrer-Policy, Permissions-Policy,
-# X-Frame-Options) дублируются явно — так в diff'ах видно, что и админка тоже
-# защищена, не унаследовано «по случайности».
+# Cloudflare применяет правила в порядке записи в файле, append'я заголовки.
+# Если два блока матчат один путь — оба набора заголовков попадут в ответ
+# как РАЗДЕЛЬНЫЕ HTTP-заголовки. Для большинства это OK (значения совпадают),
+# но для Content-Security-Policy браузер применяет ПЕРЕСЕЧЕНИЕ нескольких
+# заголовков — и строгий /* блокирует unpkg.com из admin-CSP, ломая Decap.
+#
+# Решение: правила в порядке от общего к частному, и в /admin/* перед
+# Content-Security-Policy ставим `! Content-Security-Policy` — спец-синтаксис
+# CF, который удаляет ранее установленный заголовок перед добавлением нового.
+# Остальные headers (X-Content-Type-Options, Referrer-Policy, Permissions-Policy,
+# X-Frame-Options) одинаковые в обоих scope'ах — дубликаты с тем же значением
+# браузер обрабатывает корректно, удалять их через `!` не нужно.
 #
 # При добавлении нового внешнего сервиса (Cloudflare Images, ещё одна аналитика,
 # embed, новый бэкенд формы…) — найди подходящую CSP-директиву ниже и добавь
@@ -20,24 +27,9 @@
 #   connect-src  — fetch(), XHR, WebSocket, EventSource, sendBeacon, Worker
 #   form-action  — куда может быть отправлен <form> submit
 #   frame-ancestors — кто может встраивать нас в <iframe>
-# После изменений в этом файле нужен ре-деплой CF Pages — headers применяются на edge.
+# После изменений в этом файле нужен ре-деплой CF — headers применяются на edge.
 
-# ─── Decap admin ────────────────────────────────────────────────────────────
-# Decap CMS грузится с unpkg.com (один <script src>), его внутренний код
-# использует inline scripts + eval — отсюда 'unsafe-inline' и 'unsafe-eval'.
-# Контентно общается с api.github.com (чтение/коммит контента) и с нашим
-# OAuth Worker'ом (обмен GitHub OAuth code на access token).
-# Картинки/аватары пользователей GitHub разрешены для media-widget.
-# X-Frame-Options DENY оставляем — мы не хотим, чтобы /admin/ можно было
-# встроить в чужой iframe (защита от clickjacking-кражи токенов).
-/admin/*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.githubusercontent.com https://avatars.githubusercontent.com; font-src 'self' data: https://unpkg.com; connect-src 'self' https://api.github.com https://svetik-design-oauth.svetik-design.workers.dev; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
-  X-Frame-Options: DENY
-
-# ─── Public site ────────────────────────────────────────────────────────────
+# ─── Public site (default) ─────────────────────────────────────────────────
 # script-src 'self' для bundled JS из dist/_astro/*, 'unsafe-inline' для
 # YandexMetrica и CookieBanner (is:inline по дизайну — no-flash consent
 # должен выполниться синхронно до paint, см. progress.md «no-flash consent
@@ -61,3 +53,19 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-Frame-Options: DENY
+
+# ─── Decap admin (overrides CSP from /*) ──────────────────────────────────
+# Decap CMS грузится с unpkg.com (один <script src>), его внутренний код
+# использует inline scripts + eval — отсюда 'unsafe-inline' и 'unsafe-eval'.
+# Контентно общается с api.github.com (чтение/коммит контента) и с нашим
+# OAuth Worker'ом (обмен GitHub OAuth code на access token).
+# Картинки/аватары пользователей GitHub разрешены для media-widget.
+# X-Frame-Options DENY оставляем — мы не хотим, чтобы /admin/ можно было
+# встроить в чужой iframe (защита от clickjacking-кражи токенов).
+#
+# Первый `! Content-Security-Policy` КРИТИЧЕН — удаляет строгий CSP из /*.
+# Без него браузер видит два разных CSP-заголовка и применяет пересечение,
+# что блокирует unpkg.com и ломает Decap (белая страница).
+/admin/*
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.githubusercontent.com https://avatars.githubusercontent.com; font-src 'self' data: https://unpkg.com; connect-src 'self' https://api.github.com https://svetik-design-oauth.svetik-design.workers.dev; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
