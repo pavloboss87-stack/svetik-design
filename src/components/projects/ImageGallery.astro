@@ -13,6 +13,8 @@ const { gallery, title } = project.data;
 <section aria-label="Галерея проекта" class="mt-10">
   <ul class="grid gap-6 sm:grid-cols-2">
     {
+      // Gallery widths ≤1200px — Lighthouse-perf budget на /works/[slug].
+      // Менять только синхронно с image-widths-checklist в log.md (T25).
       gallery.map((image, idx) => (
         <li class="overflow-hidden bg-neutral-100">
           <Image

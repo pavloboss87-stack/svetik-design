@@ -15,6 +15,10 @@ const href = `/works/${id}/`;
 <article class="group flex flex-col">
   <a href={href} class="block focus:outline-none">
     <div class="relative overflow-hidden bg-neutral-100">
+      {
+        /* Cover widths ≤800px — Lighthouse-perf budget на /works listing.
+          Менять только синхронно с image-widths-checklist в log.md (T25). */
+      }
       <Image
         src={data.cover}
         alt={data.title}
