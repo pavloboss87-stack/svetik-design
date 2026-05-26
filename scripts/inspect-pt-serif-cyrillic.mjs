@@ -41,10 +41,13 @@ for (const [file, label] of targets) {
   for (const [glyph, cp] of required) {
     const g = font.glyphForCodePoint(cp);
     // glyphForCodePoint всегда возвращает glyph; .id===0 => .notdef => нет в шрифте
-    if (!g || g.id === 0) missing.push(`${glyph} (U+${cp.toString(16).toUpperCase().padStart(4, '0')})`);
+    if (!g || g.id === 0)
+      missing.push(`${glyph} (U+${cp.toString(16).toUpperCase().padStart(4, '0')})`);
   }
   if (missing.length === 0) {
-    process.stdout.write(`OK ${label.padEnd(12)} ${file} — все ${required.length} required глифов присутствуют\n`);
+    process.stdout.write(
+      `OK ${label.padEnd(12)} ${file} — все ${required.length} required глифов присутствуют\n`,
+    );
   } else {
     anyMissing = true;
     process.stdout.write(`FAIL ${label.padEnd(12)} ${file} — отсутствуют: ${missing.join(', ')}\n`);
