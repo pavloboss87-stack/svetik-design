@@ -1000,7 +1000,7 @@
 
 ### Wave 12
 - [x] T27: CF Pages project + env vars + первый prod-деплой
-- [ ] T30: E2E Playwright тесты
+- [x] T30: E2E Playwright тесты
 
 ### Wave 13
 - [ ] T28: guide-for-svetlana.md + activation checklist

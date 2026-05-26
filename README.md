@@ -32,7 +32,13 @@ pnpm lint       # ESLint flat config + plugin-astro
 pnpm format     # Prettier (+ prettier-plugin-astro)
 pnpm typecheck  # astro check
 pnpm test       # vitest (src/lib + workers/*/test)
+pnpm test:e2e   # Playwright (tests/e2e/, builds + serves dist/ once)
 ```
+
+E2E использует `@playwright/test` с двумя проектами (`chromium` Desktop +
+`mobile-safari` iPhone 13 webkit). Браузеры ставятся отдельно от npm-зависимостей —
+один раз локально через `pnpm exec playwright install chromium webkit`. В CI
+job `e2e` делает то же самое с флагом `--with-deps` (ставит OS-libs).
 
 ## CI
 
@@ -47,8 +53,9 @@ status-check в GitHub UI:
   `dist/` через встроенный static-сервер. Бюджет — `categories:{performance,
 accessibility, best-practices, seo} ≥ 0.95` (mobile preset по умолчанию)
   на 7 публичных маршрутах. Конфиг — [`.lighthouserc.json`](.lighthouserc.json).
-
-E2E (Playwright) добавляется отдельным job'ом в T30 (Session K).
+- `e2e` — Playwright против реального `pnpm build && pnpm preview` под двумя
+  проектами (chromium Desktop + iPhone 13 webkit). Покрывает 7 маршрутов +
+  404, /admin/, форму (happy + negative). Конфиг — [`playwright.config.ts`](playwright.config.ts).
 
 ## Branch protection setup (Принцип 3 enforcement)
 
@@ -65,9 +72,8 @@ Lighthouse-бюджет 95+ работает как информационный
    - **Require status checks to pass before merging** → **Require branches to be
      up to date before merging**.
    - В поле **Status checks that are required** добавьте: `lint`, `typecheck`,
-     `test`, `lighthouse`. (Имена должны совпадать с `name:` job'ов из
-     [`ci.yml`](.github/workflows/ci.yml). После добавления `e2e` job в T30 —
-     дополните список.)
+     `test`, `lighthouse`, `e2e`. (Имена должны совпадать с `name:` job'ов из
+     [`ci.yml`](.github/workflows/ci.yml).)
    - **Do not allow bypassing the above settings** (включая admins) — оставьте
      включённым, иначе любой `git push origin main --force` от админа обнуляет
      enforcement.
