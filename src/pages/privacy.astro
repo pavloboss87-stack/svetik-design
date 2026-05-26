@@ -1,0 +1,61 @@
+---
+import { getEntry, render } from 'astro:content';
+import Layout from '../components/layout/Layout.astro';
+
+const entry = await getEntry('pages', 'privacy');
+if (!entry) {
+  throw new Error('Content entry pages/privacy.md not found');
+}
+const { Content } = await render(entry);
+---
+
+<Layout
+  title={`${entry.data.title} — Светлана Головина`}
+  description="Политика обработки персональных данных оператора. Заглушка под 152-ФЗ, требует юридической вычитки перед публичным запуском."
+>
+  <article class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-8">
+      <h1 class="font-display text-3xl tracking-tight text-neutral-900 md:text-4xl">
+        {entry.data.title}
+      </h1>
+    </header>
+    <div class="privacy-prose max-w-none text-base leading-relaxed text-neutral-800">
+      <Content />
+    </div>
+  </article>
+</Layout>
+
+<style>
+  .privacy-prose :global(h2) {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.25;
+    color: var(--color-neutral-900, #111);
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .privacy-prose :global(p) {
+    margin-top: 0.875rem;
+    margin-bottom: 0.875rem;
+  }
+  .privacy-prose :global(ul) {
+    list-style: disc;
+    padding-left: 1.25rem;
+    margin: 0.75rem 0;
+  }
+  .privacy-prose :global(li) {
+    margin: 0.25rem 0;
+  }
+  .privacy-prose :global(blockquote) {
+    border-left: 4px solid #f59e0b;
+    background: #fffbeb;
+    padding: 0.875rem 1rem;
+    margin: 1rem 0;
+    color: #1f2937;
+  }
+  .privacy-prose :global(a) {
+    color: #111;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>
