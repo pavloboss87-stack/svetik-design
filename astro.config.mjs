@@ -22,7 +22,15 @@ const serveAdminIndexInDev = {
 // https://astro.build/config
 export default defineConfig({
   site: 'https://svetik-design.pages.dev',
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      // Защита на случай, если когда-нибудь Astro решит индексировать
+      // статику из public/. Сейчас /admin/index.html живёт в public/ и в
+      // sitemap не попадает по умолчанию; фильтр оставляем как явный контракт
+      // (легко увидеть в diff'ах, если /admin превратится в Astro-маршрут).
+      filter: (page) => !page.includes('/admin'),
+    }),
+  ],
   vite: {
     plugins: [tailwindcss(), serveAdminIndexInDev],
   },
