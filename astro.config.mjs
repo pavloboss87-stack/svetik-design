@@ -3,6 +3,8 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 
+import cloudflare from '@astrojs/cloudflare';
+
 // Dev-only: Vite не отдаёт public/<dir>/index.html по URL /<dir>/, нужный Decap CMS на /admin/.
 // В preview/prod (CF Pages) static-hosting резолвит trailing-slash на index.html сам.
 // Vite не лежит в прямых deps, поэтому типы импортируются из astro/connect-style минимально руками.
@@ -22,6 +24,7 @@ const serveAdminIndexInDev = {
 // https://astro.build/config
 export default defineConfig({
   site: 'https://svetik-design.svetik-design.workers.dev',
+
   integrations: [
     sitemap({
       // Защита на случай, если когда-нибудь Astro решит индексировать
@@ -31,7 +34,10 @@ export default defineConfig({
       filter: (page) => !page.includes('/admin'),
     }),
   ],
+
   vite: {
     plugins: [tailwindcss(), serveAdminIndexInDev],
   },
+
+  adapter: cloudflare(),
 });
