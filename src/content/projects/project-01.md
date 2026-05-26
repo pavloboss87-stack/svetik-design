@@ -4,7 +4,7 @@ year: 2025
 type: apartment
 area: 62
 location: Москва
-summary: 'Концепт-проект двухкомнатной квартиры. Визуализации в Homestyler, фото с watermark. Финальные тексты и ретушь — позже.'
+summary: SMOKE TEST T13 — будет откачено сразу после проверки.
 cover: ../../assets/projects/project-01/01.jpg
 gallery:
   - ../../assets/projects/project-01/01.jpg
