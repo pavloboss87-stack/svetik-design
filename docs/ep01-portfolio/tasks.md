@@ -956,7 +956,7 @@
 - [x] T05: ESLint + Prettier + npm-скрипты
 - [x] T06: Repo hygiene — .gitignore, .env.example, README-скелет
 - [x] T12: GitHub OAuth Worker (workers/oauth/) + деплой + secrets
-- [ ] T23: Submit Worker (`workers/submit/`)
+- [x] T23: Submit Worker (`workers/submit/`)
 
 ### Wave 3
 - [x] T03: Self-host шрифты Inter + Fraunces

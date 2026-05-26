@@ -1,0 +1,18 @@
+name = "svetik-design-submit"
+main = "src/index.ts"
+compatibility_date = "2026-05-25"
+account_id = "9b7219916a409f8774e11265b2d069da"
+
+# Public site origin — only requests with matching Origin header are accepted.
+# Edit and redeploy when migrating to a custom domain (ep03).
+[vars]
+PUBLIC_SITE_URL = "https://svetik-design.pages.dev"
+
+# Secrets (set via `wrangler secret put <NAME>` interactively — never commit values):
+#   TELEGRAM_BOT_TOKEN   — bot token from @BotFather
+#   OWNER_CHAT_ID        — recipient chat id (sister's personal or a private group)
+#   SMTP_USER            — Yandex SMTP login (reserved for ep03 — currently no-op in code)
+#   SMTP_PASS            — Yandex SMTP app password (reserved for ep03 — currently no-op in code)
+#
+# Until ALL four are set, the Worker runs in mock-mode and returns
+# 200 { ok: true, mock: true } for any valid payload. See README.md.
