@@ -1004,7 +1004,7 @@
 
 ### Wave 13
 - [x] T28: guide-for-svetlana.md + activation checklist
-- [ ] T29: README.md (incl. branch protection setup)
+- [x] T29: README.md (incl. branch protection setup)
 
 ### Wave 14
 - [ ] T31: Финальная QA + закрытие ep01
