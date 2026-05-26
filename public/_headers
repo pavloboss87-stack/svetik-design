@@ -48,14 +48,15 @@
 # style-src 'unsafe-inline' — Astro оставляет style=".." атрибуты на элементах
 # (например, на cookie-banner page-scoped style).
 # img-src: 'self' для Astro-генерированных webp; data: для inline SVG-favicon;
-# mc.yandex.ru — Metrica-пиксель в <noscript> fallback'е; cdn4.telegram-cdn.org —
-# фото из TG-feed на главной (TelegramFeed.astro).
+# mc.yandex.ru — Metrica-пиксель в <noscript> fallback'е; *.telesco.pe — фото
+# из TG-feed на главной (TelegramFeed.astro; Telegram отдаёт картинки с CDN
+# cdnN.telesco.pe — N меняется, поэтому wildcard).
 # connect-src: Metrica beacon + Submit Worker (POST /api/submit с /contact).
 # form-action: Submit Worker — браузер не даст отправить форму куда-то ещё, даже
 # если что-то перехватит submit handler.
 # frame-ancestors 'none' + X-Frame-Options DENY — дубль запрета на iframing.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://mc.yandex.ru https://cdn4.telegram-cdn.org; font-src 'self'; connect-src 'self' https://mc.yandex.ru https://svetik-design-submit.svetik-design.workers.dev; form-action 'self' https://svetik-design-submit.svetik-design.workers.dev; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://mc.yandex.ru https://*.telesco.pe; font-src 'self'; connect-src 'self' https://mc.yandex.ru https://svetik-design-submit.svetik-design.workers.dev; form-action 'self' https://svetik-design-submit.svetik-design.workers.dev; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
