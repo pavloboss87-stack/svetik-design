@@ -7,6 +7,15 @@ import SchemaPerson from '../seo/SchemaPerson.astro';
 import YandexMetrica from '../analytics/YandexMetrica.astro';
 import CookieBanner from '../ui/CookieBanner.astro';
 
+// ep02 T05 — preload-hints для критических шрифтов первого экрана.
+// Подтягиваем .woff2 как ESM-импорт, чтобы Astro подставил fingerprinted
+// путь и preload-link указывал ровно на тот же URL, который грузит CSS.
+// Preload-им ровно два файла: PT Serif cyrillic 400 (display) и Inter
+// cyrillic 400 (body). 700-вес PT Serif и 500/600 Inter не preload-им —
+// font-display:swap справится со стилевыми вариантами.
+import ptSerifCyrillic400 from '@fontsource/pt-serif/files/pt-serif-cyrillic-400-normal.woff2?url';
+import interCyrillic400 from '@fontsource/inter/files/inter-cyrillic-400-normal.woff2?url';
+
 interface Props {
   title?: string;
   description?: string;
@@ -26,6 +35,9 @@ const { title, description, ogImage, canonical } = Astro.props;
     <meta name="theme-color" content="#ffffff" />
 
     <MetaTags title={title} description={description} ogImage={ogImage} canonical={canonical} />
+
+    <link rel="preload" as="font" type="font/woff2" href={ptSerifCyrillic400} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={interCyrillic400} crossorigin />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="32x32" />

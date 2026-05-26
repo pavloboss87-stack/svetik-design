@@ -1,3 +1,55 @@
-/* Design tokens — ep02. Placeholder for typographic scale, color palette,
-   spacing, and motion primitives. Intentionally empty until ep02 finalizes
-   the visual language. */
+/* ep02 T02 — финальная шкала токенов.
+   Modular ratio 1.25 (major third) — мягче 1.333, попадает в editorial-регистр
+   PT Serif + Inter. Шкала намеренно короткая: 7 размеров покрывают Hero /
+   About / project pages Schema 1. Расширять — только когда новая страница
+   реально потребует, не «на будущее». 4px-grid spacing.
+
+   Подразумеваемое использование (фиксируется здесь как контракт):
+   - --text-display → Hero <h1>
+   - --text-2xl     → <h1> страниц (About, project detail)
+   - --text-xl      → <h2> секций
+   - --text-lg      → Hero sub-line, lede-абзацы
+   - --text-base    → body, основной текст
+   - --text-sm      → метаданные, навигация
+   - --text-xs      → captions, мелкая служебная информация
+*/
+
+:root {
+  /* Type scale (modular ratio 1.25, base 16px) */
+  --text-xs: 0.8rem; /* 12.8px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.25rem; /* 20px */
+  --text-xl: 1.5625rem; /* 25px */
+  --text-2xl: 1.953rem; /* ≈31px */
+  --text-display: 3.815rem; /* ≈61px — clamp в местах применения */
+
+  /* Leading */
+  --leading-tight: 1.1;
+  --leading-normal: 1.45;
+  --leading-relaxed: 1.65;
+
+  /* Tracking */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.06em;
+
+  /* Spacing (4px grid) */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px */
+  --space-24: 6rem; /* 96px */
+  --space-32: 8rem; /* 128px */
+
+  /* Palette — минимум: ink / paper / один нейтральный акцент для границ и
+     метаданных. Цвета подобраны под editorial-серif: тёплый off-white фон,
+     не пюрный чёрный текст. */
+  --ink: #1a1a1a;
+  --paper: #fafaf8;
+  --accent-neutral: #a8a39b;
+}

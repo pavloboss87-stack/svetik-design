@@ -8,11 +8,62 @@ const { Content } = await render(entry);
 
 <section class="border-b border-neutral-200 bg-white">
   <div class="mx-auto max-w-3xl px-6 py-24 md:py-32">
-    <h1 class="font-display text-4xl leading-tight tracking-tight text-neutral-900 md:text-6xl">
-      {entry.data.title}
-    </h1>
-    <div class="prose prose-neutral mt-8 max-w-2xl text-lg leading-relaxed text-neutral-700">
+    <h1 class="hero-title">{entry.data.title}</h1>
+    <div class="hero-body prose prose-neutral mt-8">
       <Content />
     </div>
+    <p class="mt-12">
+      <a class="hero-cta" href="/works" data-testid="hero-cta">
+        Смотреть работы
+        <span aria-hidden="true">→</span>
+      </a>
+    </p>
   </div>
 </section>
+
+<!--
+  ep02 T07 — Schema 1 (typographic) калибровка. Размеры/leading/tracking — токены
+  из src/styles/tokens.css. h1 ограничен по ширине ~16ch (≈10–12 слов в строке на
+  desktop), body — стандартный prose-предел. clamp() на h1 предотвращает overflow
+  на 360px без отдельной media-query. Финальный текст приедет в T12 (Session D).
+-->
+<style>
+  .hero-title {
+    font-family: var(--font-display);
+    color: var(--ink);
+    font-size: clamp(2.25rem, 7vw, var(--text-display));
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    max-width: 16ch;
+  }
+
+  .hero-body {
+    font-family: var(--font-sans);
+    font-size: var(--text-lg);
+    line-height: var(--leading-relaxed);
+    color: var(--ink);
+    max-width: 60ch;
+  }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5em;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.35em;
+    text-decoration-thickness: 1px;
+    text-decoration-color: var(--accent-neutral);
+    transition: text-decoration-color 150ms ease;
+  }
+
+  .hero-cta:hover,
+  .hero-cta:focus-visible {
+    text-decoration-color: var(--ink);
+  }
+</style>

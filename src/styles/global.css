@@ -1,4 +1,12 @@
-@import '@fontsource-variable/fraunces';
+/* Шрифты (ep02 T01): PT Serif (Paratype) — cyrillic-only initial subset.
+   Сайт в ep02 — RU-only, поэтому latin subset намеренно не подключается; добавим
+   первым же latin-import, если ep03 потребует. Подтверждённые имена файлов из
+   node_modules/@fontsource/pt-serif/: cyrillic-400.css / cyrillic-700.css /
+   cyrillic-400-italic.css (без суффикса -normal). font-display: swap идёт из
+   @fontsource по умолчанию. */
+@import '@fontsource/pt-serif/cyrillic-400.css';
+@import '@fontsource/pt-serif/cyrillic-700.css';
+@import '@fontsource/pt-serif/cyrillic-400-italic.css';
 @import '@fontsource/inter/400.css';
 @import '@fontsource/inter/500.css';
 @import '@fontsource/inter/600.css';
@@ -8,5 +16,5 @@
 
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Fraunces Variable', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-display: 'PT Serif', ui-serif, Georgia, 'Times New Roman', serif;
 }

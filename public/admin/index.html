@@ -5,8 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex,nofollow" />
     <title>Админка · svetik-design</title>
+
+    <!--
+      ep02 T06 — синхронизация шрифтов с прод-страницами.
+
+      Decap CMS bundled c unpkg не знает про наш Astro-bundler, поэтому шрифты
+      загружаем напрямую с jsDelivr-зеркала @fontsource (тот же пакет, что в
+      проде). Минимальный набор = три PT Serif cyrillic (400/700/400-italic) +
+      три Inter aggregate (400/500/600) — точная параллель с src/styles/global.css.
+      Inter aggregate содержит unicode-range, поэтому браузер скачает только
+      cyrillic subset на самом деле.
+
+      jsDelivr URL зафиксирован на ту же версию, что и dependency в package.json,
+      чтобы CDN-cache не разъезжался с локальным package.json при обновлениях.
+      _headers /admin/* CSP добавляет cdn.jsdelivr.net в style-src и font-src.
+
+      CMS.registerPreviewStyle() ниже пропихивает тот же набор стилей в preview-
+      iframe Decap'а — иначе предпросмотр редактируемой страницы остался бы в
+      системном Georgia, а sister в админке видела бы текст не таким, каким он
+      будет на продe.
+    -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/pt-serif@5.2.8/cyrillic-400.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/pt-serif@5.2.8/cyrillic-700.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/pt-serif@5.2.8/cyrillic-400-italic.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/400.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/500.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/600.css" />
   </head>
   <body>
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <script>
+      // registerPreviewStyle вставляет <link rel="stylesheet"> в preview iframe Decap'а.
+      // Должно быть вызвано до автозапуска CMS (он происходит после загрузки этого скрипта).
+      var fontUrls = [
+        'https://cdn.jsdelivr.net/npm/@fontsource/pt-serif@5.2.8/cyrillic-400.css',
+        'https://cdn.jsdelivr.net/npm/@fontsource/pt-serif@5.2.8/cyrillic-700.css',
+        'https://cdn.jsdelivr.net/npm/@fontsource/pt-serif@5.2.8/cyrillic-400-italic.css',
+        'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/400.css',
+        'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/500.css',
+        'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.2.8/600.css',
+      ];
+      fontUrls.forEach(function (url) {
+        CMS.registerPreviewStyle(url);
+      });
+      // Дополнительный inline raw-style — чтобы preview-iframe сразу применял шрифты
+      // к разметке, которую Decap рендерит по дефолтным стилям.
+      CMS.registerPreviewStyle(
+        "body{font-family:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1a1a1a}h1,h2,h3,h4,h5,h6{font-family:'PT Serif',ui-serif,Georgia,'Times New Roman',serif}",
+        { raw: true },
+      );
+    </script>
   </body>
 </html>
