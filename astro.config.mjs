@@ -21,7 +21,7 @@ const serveAdminIndexInDev = {
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://svetik-design.pages.dev',
+  site: 'https://svetik-design.svetik-design.workers.dev',
   integrations: [
     sitemap({
       // Защита на случай, если когда-нибудь Astro решит индексировать
