@@ -610,3 +610,53 @@ Tasks: T24, T24a (+ T24a fix), T25. Все exit-критерии из `session-p
      - `lighthouse` — наиболее вероятный кандидат на failure. Открыть upload-artifact «lighthouse-report» (link в шаге `Run Lighthouse CI`), посмотреть точно какой аудит ниже 95. Если Best Practices из-за CSP — это ожидаемо для lhci's static-server (см. выше), фикс — отключить `csp-xss` audit в `.lighthouserc.json`. Если Performance из-за TG-CDN — снизить `numberOfRuns: 1` ничего не даст, рассмотреть отключение `lazy-loaded` image-loading audit или ослабить performance до 0.9.
   2. **Включить branch protection** — Settings → Branches → Add rule → `main` pattern → checkbox'ы и required-checks `lint`/`typecheck`/`test`/`lighthouse` по 6 шагам из README `## Branch protection setup`. После включения попытаться `git push origin main --force-with-lease HEAD~1:main` (без PR) → должно получить `protected branch ... rejected`.
 - **Patterns**: см. `progress.md` (новый: «CI quality gate: 4 status checks из CI workflow = required в branch protection — имена должны совпадать с `name:` job'ов в YAML, иначе protection не сработает (silent pass всех PR)»).
+
+## 2026-05-26 — [T27] CF Pages project setup — instructions for brother
+
+- **Status**: ⏸ Manual brother step. Аналогично T12 (OAuth Worker deploy) и T23 (Submit Worker deploy) — у Claude нет инструмента, чтобы создать Pages-проект в CF Dashboard, только wrangler-CLI для Workers. Pages-проекты создаются через UI один раз; дальнейшие deploy — автоматом по push'у.
+- **Files changed**: ничего из кода. Все pre-requisites выполнены в предыдущих задачах: `astro.config.mjs#site` зафиксирован (T02), `.env.example` зафиксирован (T06), `package.json#scripts.build` = `astro build` (T01), `pnpm-lock.yaml` есть → `pnpm install --frozen-lockfile` детерминирован. Этот лог-блок — единственный артефакт T27.
+- **Pre-condition**: Submit Worker должен быть задеплоен ДО первого Pages-деплоя (`PUBLIC_SUBMIT_URL` нужен в env vars CF Pages; пустая строка ломает ContactForm с graceful-сообщением). T23 deploy pending от Session D — бра́т выполняет первым шагом ниже.
+
+### Brother-checklist для T27 (12 шагов, ~20 минут)
+
+| Шаг | Действие | Что получится |
+|---|---|---|
+| 1 | **Push текущего main в origin**: `git push origin main`. | После предыдущих 21 коммитов (включая T26) — `origin/main` = `main`. CF Pages-проект, привязанный к репо, увидит свежее состояние при первой подключке. |
+| 2 | **Задеплой Submit Worker, если ещё не сделал** (pending от Session D / T23): `cd C:\Proj\Svetik-design\workers\submit && wrangler deploy`. wrangler уже залогинен (после Session C), account_id `9b7219916a409f8774e11265b2d069da` зашит в `wrangler.toml`. После деплоя посмотри URL — должно быть `https://svetik-design-submit.svetik-design.workers.dev` (subdomain `svetik-design` — тот же, что для OAuth Worker; имя Worker'а из `wrangler.toml#name = "svetik-design-submit"`). Запиши URL — его в env vars пропишем в шаге 9. Если subdomain получится другой (например, если выберет другой при первом деплое) — обнови `public/_headers` (CSP `connect-src` + `form-action`) на новый URL и закоммить `ep01 T24a hotfix: actual submit worker subdomain`. |
+| 3 | **Проверь работу Worker'а** (mock-mode без секретов): см. два curl'а в записи T23 выше («Pending action (deploy by бра́т)» пункты 5–6). Должно вернуть HTTP 200 `{ok:true,mock:true}` на корректный payload + HTTP 400 `consent_required` без consent. Если оба зелёные — Worker готов; **сообщи URL в чат, Claude обновит этот лог и зафиксирует «end-to-end verified» под T23.** |
+| 4 | **Открой dash.cloudflare.com** → Workers & Pages → **Create application** → вкладка **Pages** → **Connect to Git**. (Если CF просит authorize GitHub-приложение — Allow / Install для аккаунта `pavloboss87-stack`.) |
+| 5 | **Выбери репозиторий**: `pavloboss87-stack/svetik-design`. **Begin setup**. |
+| 6 | **Set up builds and deployments** — заполни форму: <br>• **Project name**: `svetik-design` (это станет subdomain — `svetik-design.pages.dev`; если CF говорит «taken» — попробуй `svetik-design-site` и обнови `astro.config.mjs#site` + `seo.json#siteUrl` + `public/_headers` потом). <br>• **Production branch**: `main`. <br>• **Framework preset**: Astro (CF подставит дефолты, но проверь следующие два поля). <br>• **Build command**: `pnpm install --frozen-lockfile && pnpm build`. <br>• **Build output directory**: `dist`. <br>• **Root directory (advanced)**: оставь пустым (репо-корень). |
+| 7 | **Environment variables (Production)** — раздел внизу формы. Добавь 4 переменные: <br>• `NODE_VERSION` = `22` (CF Pages читает эту env, не `.nvmrc`; локально у тебя Node 24, в проде/CI — 22, см. лог T26). <br>• `PUBLIC_SITE_URL` = `https://svetik-design.pages.dev` (если project name отличается — обнови строку). <br>• `PUBLIC_METRIKA_ID` = (пустая строка) — пока Yandex.Metrica counter не создан (ep03 activation checklist). YandexMetrica.astro в этом режиме no-op'ит (T22). <br>• `PUBLIC_SUBMIT_URL` = `https://svetik-design-submit.svetik-design.workers.dev/api/submit` (URL из шага 2 + путь `/api/submit`). |
+| 8 | **Environment variables (Preview)** — отдельная вкладка/секция, нажми «Add same variables to Preview». Если CF не предлагает копирование — продублируй те же 4 строки для **Preview**. Preview-окружение используется для CF Pages preview-URL на каждый PR. Без копирования формы на preview'ях не получат `PUBLIC_SUBMIT_URL` → submit-кнопка покажет «отправка временно недоступна» (graceful fallback, но ломает PR-демо). |
+| 9 | **Save and Deploy**. CF Pages запускает первый билд. Логи доступны в **Deployments → svetik-design → <deployment id> → View build log**. Ожидаемая длительность билда — 2–4 минуты (pnpm install + 11 страниц + image-pipeline). |
+| 10 | **После успешного билда** — открой `https://svetik-design.pages.dev/`. Должна отрисоваться главная (Hero + Manifesto + TelegramFeed). Если build упал: <br>• `pnpm install --frozen-lockfile` ошибка — проверь, что lockfile запушен (`git ls-tree origin/main | grep pnpm-lock`). <br>• `sharp` ENOENT — CF Pages поддерживает sharp на Linux x64, проблем быть не должно. Если есть — добавь env `NODE_ENV=production`. <br>• Astro check fail — этот код локально зелёный (T26 verification), значит несоответствие версий Node. Подтверди `NODE_VERSION=22`. |
+| 11 | **Ручной обход 7 публичных маршрутов** на превью: `/`, `/works/`, `/works/project-01/`, `/about/`, `/services/`, `/contact/`, `/privacy/`, `/admin/`. Open Chrome DevTools → Network → Disable cache → Reload. Каждый маршрут — HTTP 200, видны Header + Footer. На `/contact` — заполни форму (имя, контакт `@svgodesign`, сообщение, поставь галочку consent), Submit → ожидай `{ok:true,mock:true}` в Network. На `/admin/` — кликни «Login with GitHub», должен открыться popup OAuth → авторизуйся → admin UI с 9 коллекциями. <br>**`curl -I https://svetik-design.pages.dev/`** в PowerShell — должен вернуть 5 заголовков из `_headers`: `content-security-policy`, `x-content-type-options: nosniff`, `referrer-policy: strict-origin-when-cross-origin`, `permissions-policy: ...`, `x-frame-options: DENY`. Если CSP нет — `_headers` не подхватился; проверь, что файл `dist/_headers` существует после билда (CF копирует public/ → корень dist/, а CF Pages читает `_headers` оттуда). |
+| 12 | **Скриншот build-логов** — сделай screenshot ВСЕЙ страницы Deployments → <deployment> → Build log (длинная страница, можно через Chrome DevTools → Capture full size screenshot, либо несколько скринов внахлёст). Сохрани в `docs/guide-screenshots/cf-pages-first-build.png` (создай папку, если её нет). После сообщи в чат — Claude закоммитит файл и обновит log.md финальным апдейтом «T27 deployment verified, URL: ..., все 7 маршрутов 200, CSP применился, форма mock-200, /admin login работает». |
+
+### Что Claude НЕ может проверить локально
+- HTTP 200 на `https://svetik-design.pages.dev/<route>/` — нужен живой деплой.
+- Применение `_headers` на edge — `pnpm preview` не реализует CF-edge features.
+- Сохранность OAuth Worker handshake после смены домена с localhost на pages.dev — нужен живой клик «Login with GitHub» с `https://svetik-design.pages.dev/admin/` (Authorization callback URL в GitHub OAuth App уже зафиксирован как `https://svetik-design-oauth.svetik-design.workers.dev/callback` — должен сработать).
+- CORS-allow от Submit Worker: `Origin: https://svetik-design.pages.dev` совпадает с `PUBLIC_SITE_URL` Worker'а (T23 wrangler.toml var), но end-to-end fetch с настоящего домена — нужно проверять на проде.
+
+### После рапорта бра́та — что обновит Claude
+- Допишет финальный апдейт под этим блоком: реальный URL, скриншот добавлен, 7 маршрутов проверены, CSP-headers подтверждены, /admin login OK, /contact submit-200 OK.
+- Закоммитит `docs/guide-screenshots/cf-pages-first-build.png` отдельным коммитом `ep01 T27: CF Pages first deploy verified` или вместе с Session J closing notes.
+- Обновит `## Session J — closing notes` в этом log.md с итогом обоих T26+T27.
+
+### Связь с T26 (Lighthouse CI)
+- Если бра́т ещё не пушил T26 в origin (шаг 1 выше уже подразумевал push) — `git push origin main` поднимет одновременно и CF Pages-деплой (если проект подключён к этому моменту), и первый CI-ран. Если CF Pages-деплой раньше — он зелёный или красный по pnpm build; если первый красный — CI lighthouse тоже не запустится, потому что lighthouse-job делает свой `pnpm build` независимо. Оба билда — Node 22, должны вести себя одинаково.
+- Если Lighthouse-job в CI красный на каком-то из 4 audits ≥ 95 — см. T26 «Pending action #1». Самый частый кандидат — Best Practices из-за отсутствия CSP в lhci's static-server. После T27 (где CSP работает на edge) — можно сравнить локальный CI score с реальным Lighthouse-аудитом против `https://svetik-design.pages.dev/` (Chrome DevTools → Lighthouse → Mobile → Run) — если на проде ≥ 95, то ослабление лимита в `.lighthouserc.json` обосновано (lhci-static-server CSP-score — proxy с ложными failures для нашего сценария).
+
+### Acceptance criteria — статус
+- ✅ Build settings и env vars документированы (шаги 6–8).
+- ⏸ CF Pages-проект создан — манульный шаг 4–9 бра́та.
+- ⏸ `https://svetik-design.pages.dev/` отдаёт собранный сайт — после шага 9.
+- ⏸ `/admin/` отдаёт Decap login page — после шага 11 (зависит от уже сделанного T11/T12/T13).
+- ⏸ `/contact` форма → submit → 200 mock — после шага 11 (зависит от T20 + T23 deploy).
+- ⏸ TG-виджет показывает посты — после шага 9 (зависит от того, что build на CF Pages успешно сделает live-fetch против `t.me/s/Golovina_design_ambersoftloft`; если CF runners блокируются Telegram — graceful fallback покажет «Свежие записи — в Telegram-блоге», страница не падает).
+- ⏸ Скриншот build-логов сохранён — шаг 12.
+
+### Pending action (бра́т)
+Шаги 1–12 выше.
