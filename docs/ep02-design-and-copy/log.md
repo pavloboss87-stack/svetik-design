@@ -68,3 +68,51 @@
 - T01 фактические имена CSS-импортов в `@fontsource/pt-serif@5.2.8` — без `-normal` суффикса (`cyrillic-400.css`, не `cyrillic-400-normal.css`). Обновить brief T05 имея в виду эту реальность (preload-hints в Layout.astro будут импортировать `.woff2` напрямую через ESM, путь `@fontsource/pt-serif/files/pt-serif-cyrillic-400-normal.woff2` — он совпадает с тем, что лежит в `node_modules`).
 
 **Следующая сессия**: Session B — Phase 1 wiring + merge (T04, T05, T06, T07, T09, T10).
+
+## 2026-05-26 — [T04] Fonttools-инспекция PT Serif на полноту кириллицы
+
+- **Status**: ✅ Done
+- **Files changed**: `scripts/inspect-pt-serif-cyrillic.mjs` (новый), `package.json` (+`verify:fonts` script, +fontkit devDep), `pnpm-lock.yaml`
+- **Commit**: `a4be39d` — `ep02 T04: verify PT Serif cyrillic coverage via fontkit`
+- **Implementation**: fontkit (npm) читает woff2 нативно (decompresses Brotli), `glyphForCodePoint(cp).id === 0` для глифа = `.notdef`/отсутствует. Проверены 10 точек: ё/Ё (U+0451/0401), ъ/ь (U+044A/044C), й/Й (U+0439/0419), А/я (U+0410/044F), Щ/щ (U+0429/0449). Все три cyrillic-subset файла (400-normal, 700-normal, 400-italic) — 10/10 присутствуют. Stop-loss на silent fallback Fraunces-style не сработал, продолжаем по плану A.
+- **Wired as**: `pnpm verify:fonts` для воспроизводимости в будущих эпиках (ep03 при добавлении нового шрифта).
+- **Learnings**: `import * as fontkit from 'fontkit'` — пакет экспортирует NS, без default. На Windows `node` / `pnpm` не в `$PATH` по умолчанию — приходится прописывать `$env:Path = "$env:Path;C:\Program Files\nodejs;C:\Users\Pavlo\AppData\Roaming\npm"` для PowerShell-сессий.
+- **Patterns**: добавить в `progress.md` PATH hack как codebase pattern.
+
+## 2026-05-26 — [T05] Preload-hints для critical fonts в Layout.astro
+
+- **Status**: ✅ Done
+- **Files changed**: `src/components/layout/Layout.astro`
+- **Commit**: `84bc329` — `ep02 T05: preload hints for PT Serif + Inter cyrillic 400`
+- **Implementation**: два `<link rel="preload" as="font" type="font/woff2" crossorigin>` в `<head>` — PT Serif cyrillic 400 + Inter cyrillic 400. URL резолвится через Astro ESM-импорт `?url` соответствующих .woff2 — пути fingerprinted, идентичны URL, которые загружает @fontsource CSS (проверено через grep по `dist/_astro/*.css`). 700-вес PT Serif и 500/600 Inter — намеренно НЕ preload-им (font-display:swap справится со стилевыми вариантами, Lighthouse audit `unused-preload-links` не должен флагать).
+- **Verified**: `font-display:swap` присутствует в `dist/_astro/*.css` (из @fontsource по умолчанию).
+
+## 2026-05-26 — [T06] Подключить шрифты прода в Decap admin
+
+- **Status**: ✅ Done
+- **Files changed**: `public/admin/index.html`, `public/_headers`
+- **Commit**: `7e7c861` — `ep02 T06: sync prod fonts into Decap admin (jsDelivr)`
+- **Pre-flight**: `curl -sI https://cdn.jsdelivr.net/npm/@fontsource/pt-serif@5.2.8/cyrillic-400.css` → `HTTP/1.1 200 OK` + `access-control-allow-origin: *` — jsDelivr корректно отдаёт `@fontsource` пакеты, fallback на Google Fonts не нужен.
+- **Implementation**: шесть `<link rel="stylesheet">` в `<head>` admin (3 PT Serif cyrillic + 3 Inter aggregate — точная параллель с `src/styles/global.css`). Версия пакета зафиксирована (`@5.2.8`), совпадает с `package.json`. `CMS.registerPreviewStyle()` x6 (URL-style) + одна raw inline-style (`body{font-family:'Inter',...}h1..h6{font-family:'PT Serif',...}`) — пропихиваем стили в preview iframe Decap'а, чтобы редактор видел тот же визуал, что и прод.
+- **CSP**: `public/_headers` /admin/* — `style-src` и `font-src` пополнены `https://cdn.jsdelivr.net`. Без этого браузер заблокировал бы загрузку CDN-стилей/шрифтов в admin.
+- **Visual verify**: deferred — этот шаг проверяется руками в Decap UI (admin/index.html не прогоняется через e2e). Когда сестра/брат залогинится через GitHub OAuth в /admin/ → редактор страницы Hero → preview-pane должен показать `<h1>` в PT Serif, body в Inter. Если silent fallback на Georgia — diagnose через DevTools → Network в iframe.
+
+## 2026-05-26 — [T07] Hero.astro — Schema 1 calibration + CTA
+
+- **Status**: ✅ Done
+- **Files changed**: `src/components/home/Hero.astro`, `src/content/pages/hero.md`, `tests/e2e/pages.spec.ts`
+- **Commit**: `c5a1b20` — `ep02 T07: Hero.astro Schema 1 calibration + CTA`
+- **Implementation**: scoped `<style>` блок в Hero.astro привязывает `.hero-title` к `var(--font-display)`, `var(--text-display)`, `var(--leading-tight)`, `var(--tracking-tight)` — токены из `tokens.css` (T02). `clamp(2.25rem, 7vw, var(--text-display))` обеспечивает отсутствие overflow на 360px без отдельной media-query. `max-width: 16ch` на h1 даёт ~10-12 слов в строке на desktop, `max-width: 60ch` на body — стандартный prose-предел. CTA «Смотреть работы» — новая разметка (не было в ep01), стиль — тонкий underline с `text-decoration-color: var(--accent-neutral)`, поднимается до ink на hover/focus. `data-testid="hero-cta"` для assertion-scoping.
+- **Sentinel placeholder**: `hero.md` frontmatter получил YAML-комментарий `# TODO(T12): финальный Hero copy v1 — текущий body остаётся placeholder ep01, заменяется в Session D`. Существующий placeholder body «PLACEHOLDER — финальный текст в ep02. Дизайнер интерьеров. …» оставлен как визуальный sentinel — это не лорем-ипсум, не fake-английский, не LLM-черновик (Принцип 1 уточнение разрешает на промежуточных ветках).
+- **Test**: `tests/e2e/pages.spec.ts` дополнен one-liner — `[data-testid="hero-cta"]` видим, текст «Смотреть работы», href=`/works`. 24/24 e2e (без typography.spec.ts) зелёные после T07.
+
+## 2026-05-26 — [T09] typography.spec.ts — PT Serif regression stop-loss
+
+- **Status**: ✅ Done
+- **Files changed**: `tests/e2e/typography.spec.ts` (новый)
+- **Commit**: `a69b0f5` — `ep02 T09: typography.spec.ts — PT Serif regression stop-loss`
+- **Implementation**: два теста (на `/` и `/works/project-01/`) читают `<h1>` через `page.evaluate(async () => { await document.fonts.ready; ... })`. Assertions: (a) `getComputedStyle(h1).fontFamily` начинается с `'PT Serif'` (case-insensitive, кавычки опциональны); (b) `document.fonts` содержит зарегистрированный `FontFace` с family `'PT Serif'` в статусе `'loaded'`. Реализация через iteration — не через `document.fonts.check()`, т.к. эта API возвращает true для неизвестных family («ждать нечего»), что маскирует regression.
+- **Cross-browser quirks**: WebKit/Safari возвращает `FontFace.family` с обёрткой в кавычки (`'"PT Serif"'`), Chromium — без (`'PT Serif'`). Comparator снимает кавычки регексом перед сравнением — отлажено через diagnostic output на mobile-safari iPhone 13 emulation.
+- **Negative test verified**: закомментирован `@import '@fontsource/pt-serif/...'` в `global.css`, `pnpm build` + `pnpm exec playwright test tests/e2e/typography.spec.ts` → все 4 (2 страницы × 2 браузера) краснеют с осмысленным сообщением `PT Serif не зарегистрирован/не загружен; fontFamily="PT Serif", ui-serif, Georgia, "Times New Roman", serif`. Восстановлено в `global.css`, все 4 зелёные.
+- **28/28 e2e pass** на финальном состоянии после рестора.
+- **Patterns/Learnings**: `Edit replace_all=true` заменяет ВСЕ совпадения; `replace_all=false` (по умолчанию) — только первое и фейлит при множественных совпадениях. Когда логика теста повторяется в N тестах — выносить в helper-функцию (`readH1PtSerifState`), а не дублировать с `replace_all=true` (риск тихо забыть про "вторую копию"). Зафиксировано в `progress.md`.

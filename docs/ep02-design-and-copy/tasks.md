@@ -674,14 +674,14 @@ T01 → T07 → T09 → T10 → T12 → T15 → T17 → T20 → T22 → T23 → 
 - [x] T27: PR template с copy-debt checklist (hardening)
 
 ### Wave 2
-- [ ] T04: Fonttools cyrillic check
-- [ ] T05: Layout.astro preload-hints
-- [ ] T06: admin/index.html font sync
-- [ ] T07: Hero.astro Schema 1 typographic
+- [x] T04: Fonttools cyrillic check
+- [x] T05: Layout.astro preload-hints
+- [x] T06: admin/index.html font sync
+- [x] T07: Hero.astro Schema 1 typographic
 - [ ] T08: Batch retouch project-04 (manual)
 
 ### Wave 3
-- [ ] T09: typography.spec.ts regression test
+- [x] T09: typography.spec.ts regression test
 
 ### Wave 4
 - [ ] T10: Phase 1 PR — Lighthouse + merge
