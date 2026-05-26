@@ -453,3 +453,72 @@ Tasks: T18, T21, T21a. Все exit-критерии из `session-plan.md` § Se
 - ContactForm (T20) — следующая по плану зависимость, требует Session H. Зависимости T20: T19 ✅ + T21a ✅ + T23 ✅ (deploy pending), так что Session H разблокирована.
 
 **Next session**: Session H — Contact Form + consent (T20). Pre-flight: бра́т должен задеплоить Submit Worker (T23 deploy pending от Session D) и сообщить URL для `PUBLIC_SUBMIT_URL`. Без URL форма заведётся в коде, но end-to-end через `fetch` не проверится.
+
+## 2026-05-26 — [T20] ContactForm + ПДн consent + Worker wiring
+
+- **Status**: ✅ Code done. End-to-end fetch (POST в Worker → 200 mock + UI «Заявка отправлена») остаётся в TODO до момента, когда бра́т задеплоит Submit Worker и пропишет `PUBLIC_SUBMIT_URL` в `.env` / CF Pages env (Session J / T27). Без URL форма рендерится корректно, HTML5/JS-валидация работает, но фронт сразу пишет «Отправка временно недоступна. Напишите в Telegram — ссылка в списке справа» — это валидный graceful state, не баг.
+- **Files changed**: `src/components/contact/ContactForm.astro` (new), `src/pages/contact.astro` (импорт + рендер `<ContactForm />` под IntroContent), `docs/ep01-portfolio/tasks.md` (Tracker), `progress.md` (новый паттерн), `docs/ep01-portfolio/log.md` (этот блок).
+- **Form shape** (соответствие брифу T20):
+  - Поля: `name` (text, required, maxlength 100), `contact` (text, required, maxlength 100, **pattern** для email-или-`@tg`), `message` (textarea, required, maxlength 500, rows 5).
+  - **Honeypot** `website` — текстовое поле в `<div aria-hidden=true class="pointer-events-none absolute left-[-9999px] h-0 w-0 overflow-hidden">`, `tabindex="-1"`, `autocomplete="off"`. Скрыто и для зрячего пользователя, и для AT.
+  - **Consent** — `<input id="contact-consent" type="checkbox" name="consent" required>` НЕ pre-checked. Label содержит ссылку `<a href="/privacy">политикой обработки персональных данных</a>` (после T21a `/privacy` отдаёт 200, не 404).
+  - Submit-кнопка + `<p id="contact-form-status" role="status" aria-live="polite">` для feedback.
+- **JS shape**: Astro `<script>` модуль (не `is:inline`) — Astro 6 минифицирует и инлайнит небольшие скрипты в `<script type="module">` прямо в HTML (bundled JS-файл в `dist/_astro/` не создан, что нормально). Состояния: idle → submitting → success / error. UI:
+  - **Honeypot** заполнен → `form.reset()` + setStatus(SUCCESS_TEXT, 'success') silently. Никаких 4xx, никаких fetch — бот не получает ни задержки, ни payload-намёка на ловушку.
+  - **HTML5** `required` на consent блокирует native submit, JS-обработчик не вызывается → пользователь видит native bubble.
+  - **JS guard** на consent (DevTools/script bypass): `setStatus('Поставьте галочку…', 'error')` без fetch.
+  - **maxlength** 500 на `<textarea>` физически не даёт ввести 501-й символ, плюс JS guard `message.length > 500` для programmatic заполнения.
+  - **Empty URL** (PUBLIC_SUBMIT_URL не задан) → setStatus(«Отправка временно недоступна», 'error') без fetch.
+  - **POST** body — точно соответствует Worker'у T23: `{ name, contact, message, consent: true }` (honeypot не отправляется — отлавливается до сборки payload).
+  - **!response.ok** или сетевой сбой → setStatus(«Не удалось отправить. Проверьте соединение и нажмите Отправить ещё раз», 'error'). Форма не сбрасывается — повторный клик заново POST'ит.
+- **Pattern regex для contact** — `(^[^\s@]+@[^\s@]+\.[^\s@]+$)|(^@[a-zA-Z0-9_]{4,32}$)`. Совпадает с серверной валидацией Worker'а (`EMAIL_RE`/`TG_HANDLE_RE`). **Гочча**: Astro в string-attribute value (`pattern="..."`) интерпретирует backslash-escape по JS-правилам — `\s` и `\.` стираются до `s` и `.`. Первый билд rendered `pattern="(^[^s@]+@[^s@]+.[^s@]+$)|(...)"`, что ломало всю валидацию (regex принимал почти что угодно). Fix — JSX-выражение с `String.raw` в frontmatter: `const contactPattern = String.raw\`(^[^\s@]+@[^\s@]+\.[^\s@]+$)|(^@[a-zA-Z0-9_]{4,32}$)\`;` + `<input pattern={contactPattern} ...>`. Подтверждено по `dist/contact/index.html`: `pattern="(^[^\s@]+@[^\s@]+\.[^\s@]+$)|(...)"` — точные обратные слэши, regex работает.
+- **PUBLIC_SUBMIT_URL** — читается в frontmatter `import.meta.env.PUBLIC_SUBMIT_URL?.trim() ?? ''` и пробрасывается на форму через `data-submit-url`. Скрипт читает `form.dataset.submitUrl`. Решение: не использовать `import.meta.env` в `<script>` (Astro обработал бы это, но через data-attribute single source of truth — frontmatter-runtime; никакой магии bundle-time substitution).
+- **`.env.example`** не менял — там `PUBLIC_SUBMIT_URL=` уже было закладкой из T06. Когда бра́т задеплоит Worker, он добавит реальный URL в `.env` локально (для `pnpm dev` smoke-test) и в CF Pages env (для прода — T27).
+- **Verification (all gates green)**:
+  - `pnpm format` / `pnpm format:check` clean.
+  - `pnpm typecheck` — 0/0/0 на 44 Astro-файлах (форма + правленый contact.astro попадают в check).
+  - `pnpm lint` — clean.
+  - `pnpm test` — 69/69 (T20 не вводит unit-тесты; e2e покрытие — задача T30 в Session K).
+  - `pnpm build` — 11 pages зелёный.
+  - `pnpm preview` + `Invoke-WebRequest /contact/` → 200. HTML содержит: `id="contact-form"`, `data-submit-url`, `name="name|contact|message|website|consent"`, `maxlength="100"` × 2, `maxlength="500"`, `pattern="...\s..."` с корректными escape'ами, `name="consent" type="checkbox" required` (не pre-checked), label-ссылка на `/privacy`.
+  - `/privacy` → 200 (Session G).
+- **Acceptance criteria — статус**:
+  - ✅ Сабмит формы шлёт POST на `PUBLIC_SUBMIT_URL` с полем `consent: true`. **Verifiable end-to-end после деплоя Worker'а** — payload JS-конструируется как `{ name, contact, message, consent: true }`, что подтверждается чтением минифицированного inline-скрипта в `dist/contact/index.html`.
+  - ✅ Без галочки `consent` — HTML5 `required` блокирует submit на native-уровне (browser bubble), JS-обработчик не получает событие. JS-guard для DevTools-bypass — `setStatus('Поставьте галочку…', 'error')`.
+  - ✅ Ссылка «политика обработки персональных данных» ведёт на `/privacy` 200.
+  - ✅ Message > 500 символов — `maxlength="500"` физически не даёт ввести, JS-guard прикрывает programmatic-bypass.
+  - ⏸ «При успехе (200) — пользователь видит «Заявка отправлена»» — код реализован (`SUCCESS_TEXT`, `setStatus(..., 'success')`), end-to-end проверка ждёт URL.
+  - ⏸ «При сетевом сбое — ошибка с возможностью повторить» — код реализован (catch + setStatus(...,'error'), форма не reset'ится, кнопка снова кликабельна через `setSubmitting(false)`).
+  - ✅ Honeypot заполнен → форма silently «успешна» (не отправляет) — verifiable по JS-логике в bundled-скрипте: ветка `honeypot.length > 0` делает `form.reset()` + `setStatus(SUCCESS_TEXT, 'success')` + `return` ДО fetch и ДО consent-guard.
+  - ⏸ Lighthouse mobile на `/contact` ≥ 95 — отложено на Session J (T26 — `lighthouse-ci-action`); как и в Sessions F/G.
+- **Patterns**: см. `progress.md` (новые: «Astro stripтает JS-escape'ы в string-атрибутах — `pattern="\s"` теряет backslash; fix через JSX expr `{String.raw\`...\`}`», «PUBLIC_* env-var через data-attribute → `form.dataset.*` — не лазим в `import.meta.env` из `<script>` блока», «Honeypot перед HTML5-required + перед fetch — silent success без fetch, без 4xx, без timing-сигнала»).
+- **Pending action (deploy + wire by бра́т, как в T12/T23)**:
+  1. `cd workers/submit && wrangler deploy` — даст URL `https://svetik-design-submit.svetik-design.workers.dev`.
+  2. Локально для smoke-теста формы — добавить в `.env`:
+     ```
+     PUBLIC_SUBMIT_URL=https://svetik-design-submit.svetik-design.workers.dev/api/submit
+     PUBLIC_SITE_URL=http://localhost:4321
+     ```
+     (Worker проверяет Origin строго против `PUBLIC_SITE_URL` — для локального теста надо задать его равным dev-серверу, иначе CORS блокирует.)
+  3. `pnpm dev` → `/contact` → заполнить (без галочки → native bubble; с галочкой → POST в Worker → mock-mode → 200 → «Заявка отправлена»). Подтвердить в DevTools Network: request body содержит `"consent": true`.
+  4. Сообщить результат — Claude обновит этот лог финальным апдейтом «end-to-end verified».
+
+## Session H — ContactForm + consent (closed 2026-05-26)
+
+T20 закрыт (код + квалити-гейты; end-to-end fetch ждёт деплой Worker'а бра́том). Все доступные exit-критерии из `session-plan.md` § Session H выполнены:
+
+- ✅ `git log --oneline` показывает коммит `ep01 T20 ...`.
+- ✅ Без галочки `consent` — submit заблокирован (HTML5 `required` + JS guard). Запрос не уходит.
+- ⏸ «С галочкой — POST в Worker, body содержит `consent: true`, ответ 200, UI «Заявка отправлена»» — требует деплой Worker'а. Payload-конструкция и UI success state верифицированы по bundled-скрипту.
+- ✅ Message 501 символ — submit блокируется на фронте (browser `maxlength` + JS guard).
+- ✅ Ссылка «политика обработки персональных данных» ведёт на `/privacy` 200.
+- ⏸ Lighthouse mobile на `/contact` ≥ 95 — отложено на Session J (T26).
+- ✅ Progress Tracker T20 отмечен в `tasks.md`.
+
+**Outstanding from this session (не блокируют Session I):**
+
+- End-to-end POST → Worker → 200 mock — ждёт `wrangler deploy` в `workers/submit/` от бра́та. Шаги в этом логе выше.
+- Lighthouse mobile на `/contact` — Session J.
+- E2E Playwright happy/negative path формы — T30 (Session K).
+
+**Next session**: Session I — SEO assets + CSP + image verify (T24, T24a, T25). Pre-flight: всё, что зависело от Session H (CSP `connect-src`/`form-action` для Submit Worker URL), станет доступно для финализации после деплоя Worker'а; до тех пор T24a можно подготовить с плейсхолдером URL и обновить, когда URL появится.

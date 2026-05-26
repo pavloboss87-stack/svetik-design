@@ -2,6 +2,7 @@
 import { getEntry, render } from 'astro:content';
 import Layout from '../components/layout/Layout.astro';
 import ContactChannels from '../components/contact/ContactChannels.astro';
+import ContactForm from '../components/contact/ContactForm.astro';
 
 const intro = await getEntry('pages', 'contact-intro');
 if (!intro) throw new Error('pages/contact-intro entry not found');
@@ -18,9 +19,11 @@ const { Content: IntroContent } = await render(intro);
     </h1>
 
     <div class="mt-10 grid gap-12 md:grid-cols-2">
-      <div class="prose prose-neutral max-w-none text-base leading-relaxed text-neutral-800">
-        <IntroContent />
-        {/* ContactForm — T20 (Session H). Сейчас здесь только каналы связи. */}
+      <div>
+        <div class="prose prose-neutral max-w-none text-base leading-relaxed text-neutral-800">
+          <IntroContent />
+        </div>
+        <ContactForm />
       </div>
 
       <ContactChannels />

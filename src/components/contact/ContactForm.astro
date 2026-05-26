@@ -1,0 +1,196 @@
+---
+// ContactForm — 152-ФЗ-compliant POST to Submit Worker.
+//
+// - Native <form>, vanilla TS (Astro <script> module), no framework.
+// - Required `consent` checkbox is NOT pre-checked (152-ФЗ: explicit action).
+// - Off-screen honeypot field `website` — when filled, the front silently shows
+//   success without making a request, matching the Worker's [honeypot-drop] path.
+// - `maxlength=500` on message + JS guard mirroring the Worker's bound.
+// - Submit URL is baked at build-time from PUBLIC_SUBMIT_URL and passed via a
+//   data-attribute so the script does not need to access import.meta.env directly.
+
+const submitUrl = import.meta.env.PUBLIC_SUBMIT_URL?.trim() ?? '';
+
+// Email OR @telegram-handle. Kept as a JS expression so the backslashes
+// survive Astro's attribute parsing (a plain `pattern="...\s..."` string
+// loses the escape and the regex becomes `s`/`.` matchers).
+const contactPattern = String.raw`(^[^\s@]+@[^\s@]+\.[^\s@]+$)|(^@[a-zA-Z0-9_]{4,32}$)`;
+---
+
+<form id="contact-form" data-submit-url={submitUrl} class="not-prose mt-8 space-y-5">
+  <div>
+    <label for="contact-name" class="block text-sm font-medium text-neutral-900">Имя</label>
+    <input
+      id="contact-name"
+      name="name"
+      type="text"
+      required
+      maxlength="100"
+      autocomplete="name"
+      class="mt-1 block w-full border border-neutral-300 bg-white px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none"
+    />
+  </div>
+
+  <div>
+    <label for="contact-contact" class="block text-sm font-medium text-neutral-900"
+      >Email или @telegram</label
+    >
+    <input
+      id="contact-contact"
+      name="contact"
+      type="text"
+      required
+      maxlength="100"
+      autocomplete="email"
+      placeholder="you@example.com или @yourhandle"
+      pattern={contactPattern}
+      class="mt-1 block w-full border border-neutral-300 bg-white px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none"
+    />
+  </div>
+
+  <div>
+    <label for="contact-message" class="block text-sm font-medium text-neutral-900">
+      Сообщение <span class="text-neutral-500">(до 500 символов)</span>
+    </label>
+    <textarea
+      id="contact-message"
+      name="message"
+      required
+      maxlength="500"
+      rows="5"
+      class="mt-1 block w-full border border-neutral-300 bg-white px-3 py-2 text-base text-neutral-900 focus:border-neutral-900 focus:outline-none"
+    ></textarea>
+  </div>
+
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute left-[-9999px] h-0 w-0 overflow-hidden"
+  >
+    <label>
+      Website
+      <input type="text" name="website" tabindex="-1" autocomplete="off" />
+    </label>
+  </div>
+
+  <div class="flex items-start gap-3">
+    <input
+      id="contact-consent"
+      name="consent"
+      type="checkbox"
+      required
+      class="mt-1 h-4 w-4 shrink-0 border-neutral-400 text-neutral-900 focus:ring-neutral-900"
+    />
+    <label for="contact-consent" class="text-sm leading-relaxed text-neutral-700">
+      Согласен с <a href="/privacy" class="underline underline-offset-4 hover:text-neutral-900"
+        >политикой обработки персональных данных</a
+      >.
+    </label>
+  </div>
+
+  <button
+    type="submit"
+    data-submit-button
+    class="inline-flex items-center justify-center bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    Отправить
+  </button>
+
+  <p
+    id="contact-form-status"
+    role="status"
+    aria-live="polite"
+    class="min-h-[1.5rem] text-sm text-neutral-700"
+  >
+  </p>
+</form>
+
+<script>
+  const form = document.getElementById('contact-form');
+  if (form instanceof HTMLFormElement) {
+    const url = form.dataset.submitUrl ?? '';
+    const status = document.getElementById('contact-form-status');
+    const button = form.querySelector<HTMLButtonElement>('[data-submit-button]');
+
+    const SUCCESS_TEXT = 'Заявка отправлена. Я отвечу в течение дня.';
+
+    function setStatus(text: string, kind: 'idle' | 'error' | 'success'): void {
+      if (!(status instanceof HTMLElement)) return;
+      status.textContent = text;
+      status.classList.remove('text-neutral-700', 'text-red-700', 'text-emerald-700');
+      if (kind === 'error') status.classList.add('text-red-700');
+      else if (kind === 'success') status.classList.add('text-emerald-700');
+      else status.classList.add('text-neutral-700');
+    }
+
+    function setSubmitting(on: boolean): void {
+      if (!button) return;
+      button.disabled = on;
+      button.textContent = on ? 'Отправляем…' : 'Отправить';
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+
+      // Honeypot: silent success — never give a bot a 4xx that hints at the trap.
+      const honeypot = String(data.get('website') ?? '');
+      if (honeypot.length > 0) {
+        form.reset();
+        setStatus(SUCCESS_TEXT, 'success');
+        return;
+      }
+
+      // 152-ФЗ guard. HTML5 `required` already blocks the native submit when the
+      // box is unchecked, so this branch only fires if validation is bypassed
+      // programmatically (e.g. via DevTools).
+      if (data.get('consent') !== 'on') {
+        setStatus('Поставьте галочку согласия с политикой обработки персональных данных.', 'error');
+        return;
+      }
+
+      const message = String(data.get('message') ?? '');
+      if (message.length > 500) {
+        setStatus('Сообщение длиннее 500 символов — сократите и попробуйте снова.', 'error');
+        return;
+      }
+
+      if (!url) {
+        setStatus(
+          'Отправка временно недоступна. Напишите в Telegram — ссылка в списке справа.',
+          'error',
+        );
+        return;
+      }
+
+      const payload = {
+        name: String(data.get('name') ?? '').trim(),
+        contact: String(data.get('contact') ?? '').trim(),
+        message: message.trim(),
+        consent: true,
+      };
+
+      setSubmitting(true);
+      setStatus('Отправляем…', 'idle');
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          throw new Error(`http_${response.status}`);
+        }
+        form.reset();
+        setStatus(SUCCESS_TEXT, 'success');
+      } catch {
+        setStatus(
+          'Не удалось отправить. Проверьте соединение и нажмите «Отправить» ещё раз.',
+          'error',
+        );
+      } finally {
+        setSubmitting(false);
+      }
+    });
+  }
+</script>

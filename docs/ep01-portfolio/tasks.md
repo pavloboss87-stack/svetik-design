@@ -988,7 +988,7 @@
 
 ### Wave 9
 - [x] T18: Project detail + ProjectMeta + ImageGallery
-- [ ] T20: ContactForm + ПДн consent + wiring
+- [x] T20: ContactForm + ПДн consent + wiring
 
 ### Wave 10
 - [ ] T24: sitemap + robots + default OG image
