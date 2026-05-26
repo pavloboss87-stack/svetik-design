@@ -1,0 +1,40 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { formatArea, formatYear, localeProjectType } from '../../lib/format';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+const { data } = project;
+
+const items: { label: string; value: string }[] = [
+  { label: 'Год', value: formatYear(data.year) },
+  { label: 'Тип', value: localeProjectType(data.type) },
+  { label: 'Площадь', value: formatArea(data.area) },
+];
+if (data.location) {
+  items.push({ label: 'Локация', value: data.location });
+}
+---
+
+<section aria-label="Параметры проекта" class="border-y border-neutral-200 py-6">
+  <dl class="grid gap-x-8 gap-y-4 sm:grid-cols-2 md:grid-cols-4">
+    {
+      items.map((item) => (
+        <div>
+          <dt class="text-xs uppercase tracking-wider text-neutral-500">{item.label}</dt>
+          <dd class="mt-1 text-base text-neutral-900">{item.value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  {
+    data.isConcept && (
+      <p class="mt-6 inline-block rounded-sm bg-neutral-100 px-3 py-2 text-sm text-neutral-800">
+        Концепт-проект · фото в обработке
+      </p>
+    )
+  }
+</section>

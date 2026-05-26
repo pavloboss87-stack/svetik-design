@@ -1,0 +1,43 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../components/layout/Layout.astro';
+import ProjectMeta from '../../components/projects/ProjectMeta.astro';
+import ImageGallery from '../../components/projects/ImageGallery.astro';
+import { isPublishedProject } from '../../lib/sortProjects';
+
+export async function getStaticPaths() {
+  const projects = (await getCollection('projects')).filter(isPublishedProject);
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const { title, summary } = project.data;
+---
+
+<Layout title={`${title} — Светлана Головина`} description={summary}>
+  <article class="mx-auto max-w-4xl px-6 py-16 md:py-24">
+    <header class="mb-8">
+      <p class="text-sm text-neutral-500">
+        <a href="/works/" class="hover:text-neutral-900">← Все работы</a>
+      </p>
+      <h1 class="mt-4 font-display text-4xl tracking-tight text-neutral-900 md:text-5xl">
+        {title}
+      </h1>
+      <p class="mt-4 max-w-2xl text-base text-neutral-700">{summary}</p>
+    </header>
+
+    <ProjectMeta project={project} />
+
+    <div
+      class="prose prose-neutral mt-10 max-w-none text-base leading-relaxed text-neutral-800 prose-p:my-4"
+    >
+      <Content />
+    </div>
+
+    <ImageGallery project={project} />
+  </article>
+</Layout>

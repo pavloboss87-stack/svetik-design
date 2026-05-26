@@ -1,0 +1,30 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+const { gallery, title } = project.data;
+---
+
+<section aria-label="Галерея проекта" class="mt-10">
+  <ul class="grid gap-6 sm:grid-cols-2">
+    {
+      gallery.map((image, idx) => (
+        <li class="overflow-hidden bg-neutral-100">
+          <Image
+            src={image}
+            alt={`${title} — кадр ${idx + 1}`}
+            widths={[600, 900, 1200]}
+            sizes="(min-width: 768px) 50vw, 100vw"
+            class="aspect-[4/3] w-full object-cover"
+            loading={idx === 0 ? 'eager' : 'lazy'}
+          />
+        </li>
+      ))
+    }
+  </ul>
+</section>
