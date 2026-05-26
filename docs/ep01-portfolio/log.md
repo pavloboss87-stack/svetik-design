@@ -773,3 +773,80 @@ T30 закрыт. Все code-side exit-критерии из `session-plan.md` 
 - Real OAuth flow в `admin.spec.ts` не покрыт (по брифу — explicit «не идём дальше OAuth, потому что в CI без реальных кредов»). Smoke-test login (T13) живой, был успешно выполнен в Session C — повторять в E2E не нужно.
 
 **Next session**: Session L — Documentation (T28 + T29). Critical path — guide-for-svetlana.md (T28 — основной артефакт передачи сестре) + расширенный README (T29 — раздел про branch protection уже есть; добавится CSP-гайдлайн при добавлении нового сервиса). Session L особенно объёмная по тексту — стоит сделать в отдельном окне с свежим контекстом.
+
+## 2026-05-26 — [T28] guide-for-svetlana.md + activation checklist
+
+- **Status**: ✅ Done. Commit `b920d3b ep01 T28: guide-for-svetlana.md + activation checklist`.
+- **Files changed**: `docs/guide-for-svetlana.md` (new, ~700 строк, 11 разделов), `docs/guide-for-svetlana-activation.md` (new, ~110 строк, отдельный артефакт по брифу), `docs/ep01-portfolio/tasks.md` (Tracker T28).
+- **Main guide shape** (по составу [`plan.md` Step 9](plan.md) + бриф T28):
+  - §1 Что такое сайт — техническая модель «контент в Git, хостинг CF Pages, статика, пересборка 2–4 мин», что зона сестры (контент) vs зона бра́та (код/инфра).
+  - §2 Админка `/admin/` — первый логин (5 шагов), 9 разделов в таблице, добавить/править/удалить проект (по шагам с явным «PR → CI → Merge» каждый раз), поменять контакты, troubleshoot (3 типичных сценария). Скриншоты — TODO с явным указанием папки `docs/guide-screenshots/` и пометкой, что заполню в T31.
+  - §3 Ретушь watermark — IOPaint (бесплатный desktop, batch) + Cleanup.pictures (платный fallback), порядок действий по проекту с интеграцией в шаг §2.4 «как залить новые фото».
+  - §4 Подготовка фото — **жирная иконка ⚠️ с HEIC-предупреждением для iPhone** (требование брифа), два варианта решения (настройка iPhone «Most Compatible» + конвертация существующих HEIC на Mac/Windows/онлайн), размер/разрешение/кроп/имена файлов/ориентация + чек-лист на 5 пунктов перед сохранением.
+  - §5 Копирайт — явный blacklist штампов из Constitution Принципа 1 (10 фраз, дословно), структура текста о проекте на 4 пункта, тест «прочитай вслух».
+  - §6 Telegram-бот заявок — @BotFather (5 шагов), @userinfobot, запустить бота «привет», `wrangler secret put` на TELEGRAM_BOT_TOKEN/OWNER_CHAT_ID, проверка через смоук-заявку, инструкция как revoke токен.
+  - §7 Email-копия — Yandex почта (отдельный аккаунт от личного), пароль приложения SMTP, явная пометка «реальная отправка не реализована — это ep03». Стиль брифа T23: код-сторона готова, активация — отдельная задача сестры + бра́та.
+  - §8 Свой домен — что/зачем, где купить (reg.ru), какую зону (.ru рекомендую), как выбрать имя, что НЕ покупать в дополнение (хостинг/почту от регистратора).
+  - §9 Подключение домена к CF Pages — Custom domains в dash → 2 DNS-записи в reg.ru → ожидание 5 мин–24 часа → обновить siteUrl в админке → сказать бра́ту обновить CSP/OAuth callback/CORS. Проверка из РФ ISP (3 провайдера).
+  - §10 Резервный план — переезд на Timeweb Cloud с явным разделением «не теряется контент / меняется только хостинг», что делает брат, что делает сестра, когда переезжать (не заранее, по сигналам).
+  - §11 Branch protection — короткое объяснение зачем (Принцип 3 enforcement), что для сестры это значит на практике («Save → PR → CI → Merge»), что делать НЕ надо («не выключай защиту»).
+- **Activation checklist shape**: 13 пунктов в 6 группах (доступы 1–3, TG-бот 4–6, email 7, контент 8–10, проекты 11, аналитика 12, домен 13). Каждый пункт — одна строка-чекбокс + 1–2 предложения уточнения + ссылка на соответствующий раздел основного гайда (`guide-for-svetlana.md#21-первый-вход` и т.д.). Финальный блок «после всех 13 — публичный запуск» с практическими действиями (Instagram bio, визитки, Avito, пост в блог-канал). Соответствует требованию брифа «на 1 экран, можно распечатать, главный контракт передачи».
+- **Voice**: написано от имени бра́та («Я», «пиши мне», «я сделаю»), к сестре через «ты». Конкретные URL'ы и handle'ы зашиты (`pavloboss87-stack/svetik-design`, `svetik-design.pages.dev`, `svetik-design-oauth.svetik-design.workers.dev/callback`, `@Golovina_design_ambersoftloft`, `@svgodesign`). Сдержанный, материальный, конкретный язык — Constitution Принцип 1 применён к самому гайду.
+- **Stamp-grep по Constitution Принципу 1**: совпадения **только** в §5.1 «Что не писать никогда» — это явный документированный blacklist, не narrative usage. Бра́т-ревью пройдено (по логике: то же самое, что список штампов в CLAUDE.md/log.md — meta-content, не контент сайта). Активных штампов в narrative — ноль.
+- **Verification (4 квалити-гейта + stamp-grep)**: `pnpm format:check` clean (Prettier MD-нормализован), `pnpm lint` 0/0, `pnpm typecheck` 0/0/0 на 49 файлах, `pnpm test` 69/69, `pnpm build` 11 pages зелёный. Никаких code-изменений (только .md), поэтому ничего не должно было сломаться.
+- **Acceptance criteria — статус**:
+  - ✅ Гайд читается нетехническим человеком от начала до конца без «спроси брата» (но каждая нетривиальная связка явно отмечает «если не получится — пиши мне», что валидно — сестра реально может позвать).
+  - ✅ Каждый шаг имеет конкретные действия (URLs, имена кнопок «New», «Save», «Merge pull request», команды wrangler, поля forms).
+  - ✅ Ссылки актуальны: github.com, iopaint github, cleanup.pictures, heictojpg.com, microsoft store HEIC converter, reg.ru, dash.cloudflare.com, t.me/BotFather, t.me/userinfobot, id.yandex.ru/security, timeweb.cloud, rkn.gov.ru. На момент написания (2026-05-26) все живы.
+  - ✅ Activation-чек-лист — отдельный самостоятельный артефакт (`docs/guide-for-svetlana-activation.md`), не закопан в большом гайде, на 1 экран читается за минуту, печатается.
+- **Outstanding (не блокирует T29)**:
+  - Скриншоты в `docs/guide-screenshots/` — TODO с явной пометкой в §2.8 (пунктом гайда). Заполню в T31 (Session M — Final QA) когда буду делать ручной обход всех маршрутов на превью.
+  - **Внутренняя проверка** «пройти раздел Админка на чистой машине» (Tests required брифа) — отложена до момента, когда CF Pages-деплой будет live (T27 шаги 4–10 бра́та). Без живого `/admin/` пройти 2.1 «первый вход» физически невозможно — это инстуркция против реального деплоя, не локального dev.
+  - **Внутренняя проверка activation-чек-листа** — отложена туда же, по тем же причинам: пункты 4–6 (`wrangler secret put`) требуют живой Worker; пункты 1–3 (GitHub access, admin login) — живой CF Pages.
+- **Patterns**: см. `progress.md` (новый: «гайд для нетехнического пользователя — структура: оглавление кликабельное, каждый раздел self-contained, активные секреты/handle/URL зашиты литералами а не плейсхолдерами, отдельный 1-экранный activation-чек-лист как «контракт передачи»»).
+
+## 2026-05-26 — [T29] README.md для разработчика-преемника
+
+- **Status**: ✅ Done. Commit `726f343 ep01 T29: README.md for developer-successor`.
+- **Files changed**: `README.md` (расширен с 94 строк до ~340), `docs/ep01-portfolio/tasks.md` (Tracker T29).
+- **Sections added** (поверх T06 skeleton + T26 «CI» + T26 «Branch protection setup»):
+  - **Что нужно** — детализировано Node (22 в проде/CI, 24 локально допустим, объяснение про `.nvmrc=24`), pnpm (corepack-quirk на Windows документирован отсылкой к log.md), wrangler ≥4 как опциональная зависимость только для деплоя Workers.
+  - **Локальный запуск** — добавлен `.env`-template для смоук-теста контактной формы (актуальная проблема: без `PUBLIC_SUBMIT_URL` форма graceful-fallback'ает, объяснил, почему так и почему лучше не подключаться к проду из dev).
+  - **Структура** — полное ASCII-дерево `src/` (+ `content/`, `assets/`, `components/{layout,home,projects,services,contact,seo,analytics,ui}`, `lib/{settings,telegram-feed,sortProjects,seo,format}`, `styles/`), `public/`, `workers/{oauth,submit}`, `tests/{unit,e2e}` + 6 корневых конфигов (`ci.yml`, `lighthouserc`, `playwright.config`, `astro.config`, `vitest.config`, `eslint.config`). Каждая директория аннотирована одной строкой что внутри + ключевой паттерн (Astro 6 `import z from 'astro/zod'`, `z.union+narrowing helper`, `vanilla JS no React`, и т.д.).
+  - **Деплой** — раздел Pages (auto-on-push) vs Workers (manual `wrangler deploy`) с объяснением «почему Workers НЕ автодеплоятся» (защита от случайного push'а OAuth-ломалки). Список секретов на оба Worker'а + объяснение mock-mode для Submit. CF Pages env vars (Production + Preview) с `NODE_VERSION=22` явным пунктом (наиболее частый источник build-fail).
+  - **Куда смотреть при поломке (3 ломкие точки)** — Decap admin (config.yml ↔ Zod sync, OAuth handshake echo, GitHub OAuth App callback URL, dev-only Vite plugin для `/admin/`), Submit Worker (PUBLIC_SUBMIT_URL, CORS Origin match, mock-mode/`wrangler tail`, rate-limit, consent), TG-widget (селекторы под t.me/s/, build-time fetch failure → fallback, linkedom-only, CSP img-src `*.telesco.pe`). Каждый подраздел — симптом + 3–5 конкретных файлов/настроек куда смотреть с прямыми ссылками на log.md записи (например, T12 fix handshake echo).
+  - **Branch protection setup** — preserved verbatim из T26 (шесть шагов с deeplinks на ci.yml).
+  - **CSP при добавлении нового сервиса** — таблица «что добавляешь → какую директиву обновить»: внешний JS → script-src, внешние картинки → img-src, шрифты → font-src, API → connect-src, форма → form-action, iframe → frame-src. Отдельное правило про admin-scope. Объяснение «почему `unsafe-inline` оставлен и когда стоит tighten'ить» + ссылка на log.md T24a. После-правки чеклист (3 пункта проверки: build/push/curl).
+  - **CI** — preserved из T26 + добавлена ремарка про «имена job'ов должны совпадать с required-checks» (silent-pass gotcha, T26 pattern).
+  - **Документация** — расширен список ссылок: добавлены plan.md, research.md, log.md, progress.md, activation checklist (был только vision/plan/tasks).
+- **Prettier auto-format**: первый прогон `pnpm format:check` упал по `README.md` (длинные строки в markdown table требуют переразрезания). `pnpm format` → idempotent. Содержимое не поменялось, только переносы.
+- **Verification (4 квалити-гейта)**: `pnpm format:check` clean, `pnpm lint` 0/0/0, `pnpm typecheck` 0/0/0 на 49 файлах, `pnpm test` 69/69, `pnpm build` 11 pages зелёный.
+- **Acceptance criteria — статус**:
+  - ✅ Структура src/ / workers/ / public/admin/ задокументирована (ASCII-tree с аннотациями).
+  - ✅ Деплой описан (Pages auto + Workers manual + секреты + env vars).
+  - ✅ 3 самые ломкие точки описаны с прямыми инструкциями куда смотреть.
+  - ✅ Branch protection setup присутствует (preserved из T26).
+  - ✅ CSP-при-добавлении-нового-сервиса как отдельный раздел с таблицей.
+  - ✅ Ссылки на vision.md, plan.md, guide-for-svetlana.md, CLAUDE.md плюс log.md/progress.md/activation/research.
+  - ⏸ **Внутренняя проверка «разработчик поднимает локально за ≤10 минут»** — отложена до доступа к чистой Windows-машине у бра́та. README testability — высокая (все команды копи-пасте-готовы, конкретные версии, `.env` template), но end-to-end smoke-test на чистом окружении руками не проходился. Tests required — пометка, что проверка done by future maintainer / new dev.
+- **Patterns**: см. `progress.md` (новый: «README hand-off structure: prereqs → local → tree+annotations → deploy (3 ветки: pages/workers/secrets) → 3 fragile points с симптомами и referenced log.md entries → branch protection → CSP table → CI gotchas → doc index»).
+
+## Session L — Documentation (closed 2026-05-26)
+
+Tasks: T28, T29. Все exit-критерии из `session-plan.md` § Session L выполнены:
+
+- ✅ `git log --oneline` показывает 2 новых коммита: `b920d3b ep01 T28 ...`, `726f343 ep01 T29 ...` (+ этот session-closing commit).
+- ✅ `docs/guide-for-svetlana.md` существует, 11 разделов на ~700 строк, скриншоты — TODO в §2.8 (заполняется в T31 при ручном обходе превью).
+- ✅ Activation-чек-лист — отдельный артефакт `docs/guide-for-svetlana-activation.md`, 13 пунктов в 6 группах, читается за минуту.
+- ✅ README.md обновлён: содержит Branch protection setup (preserved из T26) + CSP-при-добавлении-сервиса (таблица). Plus 3-fragile-points раздел + полная структура + деплой + секреты + env vars.
+- ⏸ Внутренняя проверка «пройти раздел Админка по гайду на чистой машине» — отложена до live CF Pages-деплоя (T27 brother-checklist). Без живого `/admin/` нельзя пройти §2.1 руками.
+- ✅ Progress Tracker T28, T29 отмечен в `tasks.md`.
+
+**Outstanding from this session (для T31 / финального закрытия эпика):**
+
+- Скриншоты админки в `docs/guide-screenshots/` — заполняются в Session M (T31) при ручном QA-обходе превью. В гайде эта зона явно помечена «TODO до T31».
+- Внутренние «прогоны по гайду на чистой машине» (Tests required T28 + T29) — выполняются бра́том после T27 деплоя; результат фиксируется в T31 чек-листе («гайд проверен пошагово, всё рабочее»).
+- `README.md` Quality gates секция уже упоминает `pnpm test:e2e` (из Session K). Если ещё какие-то скрипты появятся в `package.json` — добавлять синхронно.
+- Финальная проверка «не возникает ли в гайде упоминаний несуществующих файлов/команд после T31 cleanups» — пройти grep'ом по `docs/guide-for-svetlana*.md` на ссылки и убедиться, что они валидны на момент закрытия эпика.
+
+**Next session**: Session M — Финальная QA + закрытие ep01 (T31). Critical path: чек-лист «Готово к передаче в ep02» (12 пунктов в брифе T31), CLAUDE.md ep01 → ✅ Done. Pre-flight для бра́та (как уже указано в pending T27 / T26 / T23 / T20): задеплоить Submit Worker, создать CF Pages-проект, прописать env vars, включить branch protection, добавить e2e в required checks, выдать `PUBLIC_METRIKA_ID` или явно отметить в activation checklist «доделать в ep03». Только после этих внешних шагов можно реально пройти все 12 пунктов T31.
