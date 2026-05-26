@@ -3,10 +3,14 @@
 # Источник истины полей: src/content.config.ts (Zod-схемы).
 # Это второе описание модели в Decap-yaml — поддерживается вручную (Key Decision plan.md Step 10).
 #
-# Backend: test-repo на этапе T11 — UI рендерится локально, реального коммита нет.
-# T13 переключит backend на name: github + base_url: <OAuth Worker URL из T12>.
+# Backend: GitHub через собственный OAuth proxy на Cloudflare Worker (T12 + T13).
+# Worker stateless, ~110 строк, без KV/D1/R2 — см. workers/oauth/.
+# Client Secret хранится в Worker через `wrangler secret put`, не в репо.
 backend:
-  name: test-repo
+  name: github
+  repo: pavloboss87-stack/svetik-design
+  branch: main
+  base_url: https://svetik-design-oauth.svetik-design.workers.dev
 
 # Локализация интерфейса админки на русский.
 locale: ru
@@ -18,10 +22,9 @@ locale: ru
 media_folder: src/assets/uploads
 public_folder: /src/assets/uploads
 
-# editorial_workflow = изменения уходят через PR, а не прямой коммит в main —
-# безопаснее для сестры (нельзя случайно сломать live-сайт без ревью бра́та).
-# Включим в T13, когда backend = github. На test-repo поле игнорируется.
-# publish_mode: editorial_workflow
+# editorial_workflow: изменения сестры уходят через PR, а не прямой коммит в main.
+# Бра́т ревьюит PR и мерджит. Защищает live-сайт от случайной поломки.
+publish_mode: editorial_workflow
 
 collections:
   # ───────────────────────────────────────────────────────────────────────────

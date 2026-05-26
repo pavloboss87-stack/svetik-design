@@ -195,10 +195,38 @@ Tasks attempted: T11, T12, T13. **Closed: T11 only.** T12 and T13 останов
 - **OAuth App reference**: Client ID `Ov23li2njCS1gRivex1E` (публичная часть, в `wrangler.toml` под `[vars]`). Client Secret хранится только в Cloudflare через `wrangler secret put` — никогда не попадает в git/чат. Worker name `svetik-design-oauth`, account_id `9b7219916a409f8774e11265b2d069da`.
 - **Protocol details**: маршрут `/auth?provider=github&scope=repo` → 302 на `github.com/login/oauth/authorize` с `redirect_uri=<worker-origin>/callback`. `/callback?code=…` обменивает code на access_token (POST `github.com/login/oauth/access_token` с Accept: application/json), возвращает HTML-страницу, которая делает Decap CMS handshake: ждёт `authorization:github` от opener, отвечает `authorization:github:success:{"token","provider":"github"}`. На любую ошибку — тот же постмесседж-канал с `:error:` и человекочитаемым кодом. Кэширование `no-store` на callback.
 - **Verification (без деплоя)**: `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm build` — все зелёные (Astro check игнорирует `workers/`, ESLint покрывает TS файл, Prettier переформатировал таблицу в README — ожидаемо).
-- **Outstanding (blocks T13)**:
-  1. Бра́т: `cd workers/oauth && wrangler secret put OAUTH_CLIENT_SECRET` (вводит секрет интерактивно).
-  2. Бра́т: `wrangler deploy` → получает URL `https://svetik-design-oauth.<handle>.workers.dev`.
-  3. Бра́т: GitHub OAuth App `svetik-design admin` → Edit → Authorization callback URL ← `<worker-url>/callback`.
-  4. Бра́т: сообщает Worker URL в чат. После этого Claude переходит к T13.
+- **Deploy результат (2026-05-26)**: Worker URL `https://svetik-design-oauth.svetik-design.workers.dev` (subdomain бра́т выбрал `svetik-design`, совпадает с именем Worker'а). Authorization callback URL в GitHub OAuth App `svetik-design admin` обновлён на `https://svetik-design-oauth.svetik-design.workers.dev/callback`.
 - **Patterns**: см. `progress.md` Codebase Patterns (новый паттерн «Decap-compatible OAuth proxy на CF Worker, два-шаговый handshake»).
+
+## 2026-05-26 — [T12 fix] Decap handshake echo string
+
+- **Status**: ✅ Done (commit `0782b2c ep01 T12 fix: correct Decap handshake echo string`, deployed Worker version `57e0064a-8926-4b26-99de-af31e1ffc685`).
+- **Симптом**: после успешной авторизации в GitHub popup показывал «Авторизация завершена», но opener (`/admin/`) не получал токен — кнопка «Login with GitHub» оставалась, повторный клик зацикливал процесс.
+- **Причина**: первоначальная реализация popup-скрипта ждала echo `'authorization:github'` от opener'а. Реальный протокол `decap-cms-lib-auth` (handshake_callback): opener эхо-отвечает **той же** литералой `'authorizing:github'`. Один пропущенный символ «i» — и success-сообщение никогда не отправлялось.
+- **Фикс**: popup теперь слушает echo `'authorizing:github'` (а не `'authorization:github'`), плюс идемпотентный `sent`-флаг и `setTimeout(window.close(), 500)` для автозакрытия popup.
+- **Verification**: пользователь перезагрузил `/admin/`, нажал login → popup закрылся сам → admin UI отрисовался с 9 коллекциями. Smoke-test продолжился под T13.
+
+## 2026-05-26 — [T13] Wire Decap backend to OAuth + smoke-test
+
+- **Status**: ✅ Done.
+- **Files changed**: `public/admin/config.yml` (backend `test-repo` → `github` + `repo: pavloboss87-stack/svetik-design` + `branch: main` + `base_url: https://svetik-design-oauth.svetik-design.workers.dev` + `publish_mode: editorial_workflow`), `docs/ep01-portfolio/log.md`, `docs/ep01-portfolio/tasks.md` (Tracker), `progress.md` (новые паттерны).
+- **Verification (all four checks)**: `pnpm format:check` / `pnpm lint` / `pnpm typecheck` / `pnpm build` — зелёные на состоянии после правки config.yml.
+- **Smoke-test (end-to-end сценарий сестры)**: dev-сервер `pnpm dev` поднят (background), `/admin/` отвечает 200 → бра́т логинится через «Login with GitHub» (OAuth Worker уже починен) → попадает в UI Decap → коллекция «Проекты» показывает 4 карточки (которые Decap скачал с remote `main` ветки `pavloboss87-stack/svetik-design`) → бра́т открывает project-01, меняет `summary` на маркер `SMOKE TEST T13 — будет откачено сразу после проверки.`, жмёт Save → Decap создаёт ветку `cms/projects/project-01` с одним коммитом и draft PR [#1](https://github.com/pavloboss87-stack/svetik-design/pull/1) → diff `git diff origin/main origin/cms/projects/project-01 -- src/content/projects/project-01.md` показывает ровно изменение одной строки `summary`, без лишних модификаций.
+- **Cleanup**: `git push origin --delete cms/projects/project-01` → ветка удалена → GitHub автоматически закрыл PR #1 как `closed` (не merged). main остался чистым, local working tree project-01.md не тронут (Decap пишет напрямую в remote ветку через GitHub API, никогда не касается локальной FS).
+- **Pre-condition обнаруженный по ходу**: до этого момента 8 локальных коммитов T07..T12 не были запушены в origin. Decap-github backend читает контент с remote, не с локального FS, и при первом заходе показывал пустые коллекции. Запушили 9 коммитов (включая T12-fix) перед smoke-тестом — после этого Decap увидел seed.
+- **OAuth App callback URL** (зафиксировано бра́том перед smoke-тестом): `https://svetik-design-oauth.svetik-design.workers.dev/callback` (Authorization callback URL в GitHub OAuth App `svetik-design admin`).
+- **Patterns**: см. `progress.md` (новые: «Decap-github backend читает контент с remote, не с диска», «editorial_workflow → branch + PR на save, никаких direct-commit'ов», «cleanup тестового edit через delete remote branch — PR закрывается auto-unmerged»).
+
+## Session C — Decap admin + OAuth + smoke-test (full close 2026-05-26)
+
+T11 (Session A `c351985`), T12 (Session A `9d2cb9b` + fix `0782b2c`), T13 (этот коммит) — все закрыты. Все exit-критерии из `session-plan.md` § Session C выполнены:
+
+- `git log --oneline` показывает коммиты T11, T12, T12-fix, T13 (4 в этой группе) на ветке main, все запушены в `origin/main`.
+- `localhost:4321/admin/` открывает Decap UI с реальным GitHub login (`backend: github`, OAuth через Worker `svetik-design-oauth`), не test-repo.
+- Login → edit `project-01.md` `summary` → Save → PR появился в `pavloboss87-stack/svetik-design/pulls` (PR [#1](https://github.com/pavloboss87-stack/svetik-design/pull/1), затем закрыт unmerged через delete branch).
+- `pnpm build` зелёный на main после cleanup (тестовая правка никогда не попадала в local, удалена с remote).
+- URL Worker'а и Authorization callback URL зафиксированы выше в T12-секции.
+- Progress Tracker T11 / T12 / T13 — ✅ в `tasks.md`.
+
+**Next session**: Session D — Submit Worker (T23), или Session E — Layout components + TG-feed + SEO (T14, T15, T22). T23 не зависит от Session C/D/E; T14/T15/T22 не зависят от Session C/D. Любой из двух вариантов разблокирован.
 

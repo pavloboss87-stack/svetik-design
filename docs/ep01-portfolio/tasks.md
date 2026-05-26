@@ -972,7 +972,7 @@
 - [x] T11: Decap admin shell + config.yml
 
 ### Wave 6
-- [ ] T13: Wire Decap backend to OAuth + local smoke-test
+- [x] T13: Wire Decap backend to OAuth + local smoke-test
 
 ### Wave 7
 - [ ] T14: Header.astro + Footer.astro
