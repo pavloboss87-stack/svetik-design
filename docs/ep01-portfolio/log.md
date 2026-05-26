@@ -850,3 +850,76 @@ Tasks: T28, T29. Все exit-критерии из `session-plan.md` § Session 
 - Финальная проверка «не возникает ли в гайде упоминаний несуществующих файлов/команд после T31 cleanups» — пройти grep'ом по `docs/guide-for-svetlana*.md` на ссылки и убедиться, что они валидны на момент закрытия эпика.
 
 **Next session**: Session M — Финальная QA + закрытие ep01 (T31). Critical path: чек-лист «Готово к передаче в ep02» (12 пунктов в брифе T31), CLAUDE.md ep01 → ✅ Done. Pre-flight для бра́та (как уже указано в pending T27 / T26 / T23 / T20): задеплоить Submit Worker, создать CF Pages-проект, прописать env vars, включить branch protection, добавить e2e в required checks, выдать `PUBLIC_METRIKA_ID` или явно отметить в activation checklist «доделать в ep03». Только после этих внешних шагов можно реально пройти все 12 пунктов T31.
+
+## 2026-05-26 — [T31] Final QA — partial verification (Session M, autonomous half)
+
+- **Status**: ⏸ Partial. Из 12 пунктов чек-листа T31 выполнено 8 (локально/через wrangler), 4 ждут UI-шагов бра́та (CF Pages-проект, branch protection). Эпик НЕ закрыт; CLAUDE.md `ep01-portfolio` остаётся `🔄 Active`; Progress Tracker T31 — `[ ]`.
+- **Autonomous actions выполнены в этой сессии (по запросу пользователя «можешь что-то сам?»)**:
+  1. **Все 6 локальных гейтов зелёные на коммите `cdf3d81`**: `pnpm format:check`, `pnpm lint`, `pnpm typecheck` (49 файлов, 0/0/0), `pnpm test` (5 файлов, 69 passed), `pnpm build` (11 pages, 4.39s), `pnpm test:e2e` (22 passed, 24.5s — chromium 11 + iPhone 13 webkit 11). Это закрывает DoD-универсальный для T31.
+  2. **Submit Worker задеплоен**: `cd workers/submit && wrangler deploy` → URL `https://svetik-design-submit.svetik-design.workers.dev` (Version ID `fcd74d00-d672-4ad2-bd61-81fe7191067e`). Subdomain `svetik-design` (тот же, что OAuth Worker — конвенция wrangler сохранилась); URL точно совпадает с тем, что зашит в `public/_headers` CSP `connect-src`/`form-action` (T24a) — хотфикса не понадобилось.
+     - **curl mock-mode (валидный payload с `consent: true`)**: `200 {"ok":true,"mock":true}` ✅.
+     - **curl без `consent` поля**: `400 {"ok":false,"error":"consent_required"}` ✅.
+     - **curl с чужим `Origin: https://evil.example.com`**: `403 {"ok":false,"error":"origin_not_allowed"}` ✅.
+     - **GET /api/submit**: `405` (method gate) ✅.
+     - Это закрывает acceptance criteria T23 («curl X → 200 mock», «curl без consent → 400 consent_required») end-to-end на живом Worker'е. Запись T23 апдейтится «✅ deploy verified, URL зафиксирован».
+  3. **Локальный preview-обход 16 маршрутов** (`pnpm preview` background → `Invoke-WebRequest`):
+     - 10 публичных страниц: `/`, `/works/`, `/works/project-01..04/`, `/about/`, `/services/`, `/contact/`, `/privacy/` — все 200.
+     - `/no-such-page-foo/` → 404 (404.html через Astro fallback).
+     - `/favicon.svg`, `/favicon.ico`, `/apple-touch-icon.png` — все 200 (T31 пункт 11).
+     - `/sitemap-index.xml`, `/robots.txt` — все 200.
+     - **Контент-санити (curl + Get-Content -Encoding UTF8 для кириллицы)**: на `/` 5 datetime= меток (TG-feed 5 постов рендерятся); CookieBanner present (id=`cookie-banner`); `consent:metrica:granted` dispatch event present; SchemaPerson JSON-LD present. На `/works/` 4 ссылки `/works/project-0\d/`, 8 вхождений «Концепт-проект» (4 проекта × 2 — текст в плашке + screenreader span), 11 webp srcsets. На `/works/project-01/` 3 `<img >` галереи + isConcept badge. На `/privacy/` banner «ТРЕБУЕТ ЮРИДИЧЕСКОЙ ВЫЧИТКИ» + h1 «Политика». Header не содержит `/privacy` ссылку (только `/contact`); Footer содержит `/privacy` ✅.
+  4. **Локальный Lighthouse через `@lhci/cli@latest autorun --config=.lighthouserc.json`** на 7 страниц (как в `.lighthouserc.json`; `/404` не в конфиге — низкое value, статичная 404-страница):
+
+     | URL | Perf | A11y | BP | SEO |
+     |---|---|---|---|---|
+     | `/` | 97 | 100 | 100 | 100 |
+     | `/works/` | 99 | 100 | 100 | 100 |
+     | `/works/project-01/` | 99 | 100 | 100 | 100 |
+     | `/about/` | 99 | 100 | 100 | 100 |
+     | `/services/` | 100 | 100 | 100 | 100 |
+     | `/contact/` | 99 | 100 | 100 | 100 |
+     | `/privacy/` | 99 | 100 | 100 | 100 |
+
+     Все 28 метрик ≥ 95 (бюджет `.lighthouserc.json`). Performance на `/` (97) — самая низкая из-за TG-CDN-картинок в TelegramFeed (внешний домен, без AVIF/WebP-conversion от Astro Image). Acceptable.
+
+  5. **`git push origin main`** — 27 локальных коммитов `T14..T29` + закрывающие notes Sessions E/F/G/I/J/L отправлены в origin (`e1a3538..cdf3d81`). Это триггерит первый CI workflow ran (5 job'ов: lint/typecheck/test/lighthouse/e2e). CI-результат бра́т проверяет в GitHub UI.
+
+- **Чек-лист T31 (12 пунктов) — статус**:
+
+  | # | Пункт | Статус | Доказательство |
+  |---|---|---|---|
+  | 1 | Lighthouse mobile ≥ 95 на 8 страницах | ✅ partial | Локально 7 страниц зелёные (см. таблицу выше). Edge Lighthouse против `svetik-design.pages.dev` — после T27 (бра́т). `/404` не в lhci config — статичная 404 без сторонних ресурсов, регресс маловероятен; если строго — добавить в config. |
+  | 2 | `/admin` login → edit → save → commit → rebuild → видно изменение | ⏸ blocked | Smoke-test пройден локально в Session C (T13 — PR #1, закрыт unmerged). На проде нужно повторить после CF Pages deploy. |
+  | 3 | Форма submit 200 mock / без consent — blocked | ✅ partial | Worker end-to-end: curl 200 mock + 400 consent_required ✅. E2E (Playwright `form.spec.ts`) happy+negative paths ✅. На проде нужен ручной submit с `https://svetik-design.pages.dev/contact` — после CF Pages deploy. |
+  | 4 | TG-виджет ≥ 3 постов, payload sanitised | ✅ | На `/` 5 TG-постов в HTML (datetime= × 5). XSS-тесты в `tests/unit/lib/telegram-feed.test.ts` зелёные (T15). |
+  | 5 | 4 проекта видны, кликабельны, плашка «концепт-проект» | ✅ | `/works/` — 4 ссылки + isConcept badges; `/works/project-01..04` — все 200 + badge на детальной. |
+  | 6 | `/privacy` 200, ссылки CookieBanner/ContactForm работают | ✅ | `/privacy` 200, banner-текст present, h1 «Политика» present. CookieBanner present на каждой странице (через Layout), ссылка на `/privacy` в нём (T21). ContactForm consent-label ссылка на `/privacy` (T20). Header `/privacy` НЕ содержит; Footer содержит. |
+  | 7 | CookieBanner поведение | ✅ | HTML-структура verified: `id=cookie-banner` + `data-hidden` attr + inline script + `consent:metrica:granted` dispatch. Manual browser cleared-storage flow — отложен на CF Pages превью (бра́т, шаг T27.11). |
+  | 8 | `curl -I` главной показывает CSP + 4 security headers | ⏸ blocked | `public/_headers` — это CF-edge фича, локальный `pnpm preview` не применяет. После T27 deploy: `curl -I https://svetik-design.pages.dev/` должен показать CSP + X-Content-Type-Options + Referrer-Policy + Permissions-Policy + X-Frame-Options. |
+  | 9 | Branch protection: direct push отвергнут | ⏸ blocked | UI-шаг бра́та (Settings → Branches → Add rule, 6 шагов в README). CI workflow по `git push origin main` запустится сейчас (5 job'ов); статус-чеки нужны зелёные ДО включения protection rule. |
+  | 10 | Activation-чек-лист отдельным артефактом | ✅ | `docs/guide-for-svetlana-activation.md` существует (110 строк, 13 пунктов в 6 группах). |
+  | 11 | Favicon + apple-touch-icon отдаются | ✅ | `/favicon.svg`, `/favicon.ico`, `/apple-touch-icon.png` — все 200 на локальном preview. |
+  | 12 | CLAUDE.md `ep01-portfolio: ✅ Done` | ⏸ blocked | После [1][2][3][8][9]. |
+
+- **Outstanding (бра́т UI/Dashboard)**:
+  1. **dash.cloudflare.com → Workers & Pages → Create application → Pages → Connect to Git** для `pavloboss87-stack/svetik-design`. Build settings: `pnpm install --frozen-lockfile && pnpm build`, output `dist/`. Env vars (Production + Preview):
+     - `NODE_VERSION = 22`
+     - `PUBLIC_SITE_URL = https://svetik-design.pages.dev`
+     - `PUBLIC_METRIKA_ID =` (пустая строка — graceful no-op в коде; counter будет создан в ep03)
+     - `PUBLIC_SUBMIT_URL = https://svetik-design-submit.svetik-design.workers.dev/api/submit` (Worker URL — задеплоено в этой сессии ✅)
+     Подробные 12 шагов — в записи T27 выше в этом файле.
+  2. **GitHub → Actions → workflow `ci`** — посмотреть первый run после push (только что произошёл). Все 5 job'ов должны быть зелёными: lint, typecheck, test, lighthouse, e2e. Если lighthouse красный — артефакт `lighthouse-report` покажет точные scores; локально все 7 страниц ≥ 95 на 4 метриках, так что CI должен совпасть (одинаковый билд, одинаковый Node 22). См. T26 «Pending action» если что-то не так.
+  3. **GitHub Settings → Branches → Add rule** для `main`: required status checks `lint`/`typecheck`/`test`/`lighthouse`/`e2e`, require PR before merge, disallow direct push. 6 шагов в README.md «Branch protection setup». После — попытка `git push origin main` напрямую должна reject'нуться.
+  4. **CF Pages deploy verification** (после шага 1): `curl -I https://svetik-design.pages.dev/` — все 5 security headers; `/admin/` login через GitHub OAuth работает; `/contact` форма submit → 200 mock с реального домена. Скриншот build-логов — в `docs/guide-screenshots/cf-pages-first-build.png` (создать папку, если нет).
+
+- **Что сделает Claude в следующей сессии (после рапорта бра́та)**:
+  - `curl -I` главной с CF Pages → запись CSP-headers в log.md.
+  - Lighthouse mobile против `svetik-design.pages.dev` (через DevTools или `npx lighthouse` с `--preset=mobile`) — закрыть пункт 1 на проде.
+  - Ручной smoke-test `/admin/` (через тебя) — login → edit → save → видно PR → merge → проверить пересборку.
+  - Закрыть Progress Tracker T31 (`[x]`), обновить CLAUDE.md `## Epics` table: `ep01-portfolio` → `✅ Done`.
+  - Финальная запись в log.md: «ep01-portfolio закрыт 2026-05-XX. Следующий эпик: ep02-design-and-copy.»
+
+- **Patterns (для `progress.md`)**:
+  - **`@lhci/cli@latest autorun` со `staticDistDir` поднимает собственный static-сервер** на свободном порту (53945 в этой сессии) — не нужно отдельно держать `pnpm preview` для аудита. `pnpm preview` остаётся полезным для ручных curl-проверок, но lhci изолируется. Скачивание CLI через `npx -y` занимает ~1 минуту первый раз; CLI кешируется в `%APPDATA%\npm-cache\_npx`.
+  - **PowerShell 5.1 не дружит с кириллицей в regex по умолчанию**: `Invoke-WebRequest .Content` приходит с дефолтной кодировкой (часто Windows-1251), `[regex]::Matches($content, 'Концепт-проект')` возвращает 0. Workaround: `curl.exe -s -o $tmp; Get-Content -Path $tmp -Raw -Encoding UTF8` — явная UTF-8-декодировка. Альтернатива: `System.Net.Http.HttpClient` (не доступен в WinPS 5.1, только в pwsh 7+).
+  - **wrangler deploy конвенция subdomain'а сохраняется между Workers одного аккаунта**: после первого деплоя на `svetik-design.workers.dev` (OAuth Worker в T12) — последующие Workers того же аккаунта получают тот же subdomain. Поэтому Submit Worker автоматически попал на `svetik-design-submit.svetik-design.workers.dev` (что было предсказано в `public/_headers` CSP T24a). Если subdomain ещё не выбран — wrangler спросит при первом деплое.
