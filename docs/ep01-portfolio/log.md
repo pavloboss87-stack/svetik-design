@@ -344,3 +344,13 @@ Tasks: T14, T15, T22. Все exit-критерии из `session-plan.md` § Ses
 - TelegramFeed.astro компонент сам по себе ещё не написан — `fetchTelegramFeed` готов и протестирован, использование в Hero — Session F (T16).
 
 **Next session**: Session F — Three main pages (T16, T17, T19). Critical path: всё разблокировано — Sessions A, B, E завершены, contact-form (T20) ждёт ещё Session G + Session D (которая закрыта).
+
+## 2026-05-26 — [T16] Home page (Hero + ManifestoBlock + TelegramFeed)
+
+- **Status**: ✅ Done. Commit `8a87087 ep01 T16: home page (Hero + ManifestoBlock + TelegramFeed)`.
+- **Files changed**: `src/components/home/Hero.astro` (new), `src/components/home/ManifestoBlock.astro` (new), `src/components/home/TelegramFeed.astro` (new), `src/pages/index.astro` (composes the three).
+- **Hero**: рендерит `pages/hero.md` через `await render(entry)` + `<Content />`. Типографический, без фото (финальный визуал ep02). Заголовок берётся из `entry.data.title`, тело — из body.md. Смена hero-текста через Decap → пересборка → новый текст без правки кода.
+- **ManifestoBlock**: заглушка-плашка между Hero и портфолио, ссылка `/works`. Текст без штампов по Constitution Принципу 1: «Концепты, а не сданные объекты. ...» — конкретное, личное, первое лицо. Финальный копирайт — ep02 (комментарий в файле).
+- **TelegramFeed**: вызывает `fetchTelegramFeed(channel, 5)` build-time. Канал извлекается regex из `contacts.telegramBlog.url` — менять канал через `contacts.json` без правки кода. Когда парсер вернул `[]` (сеть упала, разметка t.me поменялась) — рендерится fallback «Свежие записи — в Telegram-блоге <handle>», страница не падает. Картинки с CDN Telegram отдаются raw `<img loading=lazy referrerpolicy=no-referrer>`: Astro `<Image>` не работает с remote-untrusted URL'ами. CSP `img-src` для `cdn4.telegram-cdn.org` закроется в T24a.
+- **Verification**: `pnpm typecheck` 0/0/0 на 28 файлах, `pnpm lint` clean, `pnpm format` reformatted ManifestoBlock (длинная строка), `pnpm test` 59/59, `pnpm build` зелёный (1 page, 3.95s). Live TG-fetch: 5 постов с реальными датами/пермалинками — `dist/index.html` содержит 10 совпадений `datetime=|Читать в Telegram` = 5 постов × 2 ссылки. Stamp-grep по Constitution Принципу 1 — пусто.
+- **Patterns**: см. `progress.md` (новый: «канал TG-feed извлекается regex из contacts.telegramBlog.url — единая точка истины»).

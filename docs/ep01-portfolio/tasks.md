@@ -980,7 +980,7 @@
 - [x] T22: SEO components + format.ts utils
 
 ### Wave 8
-- [ ] T16: Home (Hero + ManifestoBlock + TelegramFeed)
+- [x] T16: Home (Hero + ManifestoBlock + TelegramFeed)
 - [ ] T17: Works listing + ProjectCard
 - [ ] T19: About + Services + Contact (no form)
 - [ ] T21: 404 + CookieBanner
