@@ -1,0 +1,16 @@
+// Корневой Worker'а — статический сайт через Workers Static Assets.
+// Astro собирает в dist/, CF Workers Builds запускает `npx wrangler versions upload`
+// → wrangler читает этот файл, заливает dist/ как ассеты, без runtime-кода (без `main`).
+// На CF Dashboard у проекта остаётся то же имя `svetik-design`, env vars/secrets
+// (Decap OAuth / Submit Worker URLs) задаются в Dashboard и сохраняются между деплоями.
+//
+// TODO(ep03): при подключении custom domain `routes` сюда добавить НЕ нужно —
+// custom domains настраиваются в CF Dashboard (Worker → Settings → Domains & Routes).
+{
+  "name": "svetik-design",
+  "compatibility_date": "2026-05-26",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+  },
+}

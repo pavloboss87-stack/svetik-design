@@ -33,3 +33,6 @@ test-results/
 
 # Lighthouse CI local reports
 .lighthouseci/
+
+# Wrangler local cache (deploy state, types, etc)
+.wrangler/
