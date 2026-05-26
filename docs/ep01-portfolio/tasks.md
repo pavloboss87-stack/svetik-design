@@ -975,9 +975,9 @@
 - [x] T13: Wire Decap backend to OAuth + local smoke-test
 
 ### Wave 7
-- [ ] T14: Header.astro + Footer.astro
-- [ ] T15: telegram-feed.ts + unit-test
-- [ ] T22: SEO components + format.ts utils
+- [x] T14: Header.astro + Footer.astro
+- [x] T15: telegram-feed.ts + unit-test
+- [x] T22: SEO components + format.ts utils
 
 ### Wave 8
 - [ ] T16: Home (Hero + ManifestoBlock + TelegramFeed)

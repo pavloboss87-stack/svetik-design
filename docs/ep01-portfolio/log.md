@@ -293,3 +293,54 @@ T23 закрыт (код+тесты, деплой pending). Все exit-крит
 - Вариант A: Session E — Layout components + TG-feed + SEO utils (T14, T15, T22). Не зависит от deploy Submit Worker'а. Critical path в сторону Session F (главные страницы).
 - Вариант B: дождаться, пока бра́т задеплоит Worker, и сразу переходить к Session H (ContactForm) — но Session H зависит ещё и от Sessions F+G, так что обычно её делают позже.
 
+## 2026-05-26 — [T14] Header + Footer components reading contacts.json
+
+- **Status**: ✅ Done. Commit `43f7ea1 ep01 T14: Header + Footer components reading contacts.json`.
+- **Files changed**: `src/components/layout/Header.astro` (new), `src/components/layout/Footer.astro` (new), `src/components/layout/Layout.astro` (wires Header + Footer + wraps slot in flex-1 div), `src/lib/settings.ts` (new — typed `getContacts()` / `getSiteSeo()` helpers).
+- **Header**: text-logo «Светлана Головина» + 4 nav links (`/works`, `/about`, `/services`, `/contact`) с `aria-current="page"` на активном маршруте, RU labels («Работы», «Обо мне», «Услуги», «Контакты»), `flex-wrap` для естественного перехода в две строки на узких экранах (4 коротких ссылки + лого помещаются на 360px и шире). Решение по mobile-menu: не вводим `<details>`-disclosure — выбранное wrap-решение проще и сохраняет принцип №6 (без JS).
+- **Footer**: 4 канала из contacts.json (`telegramPersonal`, `telegramBlog`, `vk`, `maxMe`) + email + ссылка `/privacy` + строка «Самозанятая. Налог на профессиональный доход» + dynamic copyright (`new Date().getFullYear()`). Контакты подгружаются через `getContacts()` — изменение `contacts.json` через Decap отражается на сборке без правки кода.
+- **`getContacts()` / `getSiteSeo()` helpers**: settings-collection описана как `z.union([contactsSchema, seoSettingsSchema])` (T07), поэтому `getEntry('settings', 'contacts')` возвращает тип-union — прямой доступ `data.telegramPersonal` не типизируется. Helper делает runtime-narrowing (`'telegramPersonal' in entry.data`), бросает explicit Error при отсутствии ожидаемого ключа (рано упасть на билде вместо silent undefined в UI), и возвращает корректно типизированный объект. Один helper переиспользуется в Footer (T14), MetaTags (T22), SchemaPerson (T22) и будет в ContactChannels (T19).
+- **Verification**: `pnpm typecheck` 0/0/0 на 16 файлах, `pnpm lint` clean, `pnpm format:check` clean, `pnpm build` зелёный, `dist/index.html` содержит и `<header>` с навигацией, и `<footer>` с 4 каналами + email + privacy-ссылкой. Stamp-grep по Constitution Принципу 1 — пусто.
+- **Patterns**: см. `progress.md` (новый: «settings-collection через z.union → narrowing-helper в `src/lib/settings.ts`»).
+
+## 2026-05-26 — [T15] telegram-feed.ts build-time parser + sanitization + unit tests
+
+- **Status**: ✅ Done. Commit `7aa6ddd ep01 T15: telegram-feed.ts build-time parser + unit tests`.
+- **Files changed**: `src/lib/telegram-feed.ts` (new, 116 строк), `tests/unit/lib/telegram-feed.test.ts` (new, 19 кейсов), `package.json` (+`linkedom` dependency).
+- **API**: `fetchTelegramFeed(channel, limit = 5, fetcher = fetch): Promise<TelegramPost[]>` — фетчит `https://t.me/s/<channel>` с 5-секундным AbortController timeout, graceful-fails в `[]` с `console.warn` на network/HTTP errors. `parseFeedHtml(html, limit)` — pure-function, экспортирована для тестируемости. `TelegramPost = { text, picture: string|null, date, permalink }`.
+- **Санитизация** (защита от XSS на стороне build-time): (а) `sanitizeText` стрипает C0+DEL control chars кроме `\t`/`\n` через explicit code-point filter в `for..of` цикле (regex-форма триггерила ESLint `no-control-regex` даже через `new RegExp`); (б) `safeHttpsUrl` валидирует permalink/picture через `new URL()` + `protocol === 'https:'` — невалидный permalink или non-https picture отбрасывает пост целиком (как требует бриф); (в) текст извлекается через `.textContent` linkedom-DOM, что автоматически снимает теги — Astro `{post.text}` дальше escape'ит при рендере; (г) `<script>` и `<img onerror=...>` в исходнике превращаются в plain text content (тело script-тега становится текстом — это OK, поскольку дальше escape'нется в `&lt;` etc.).
+- **Tests** (`pnpm test` зелёный, 19 + 26 worker = 45 total): см. файл `tests/unit/lib/telegram-feed.test.ts` (sanitizeText / safeHttpsUrl / parseFeedHtml happy + XSS + boundary + graceful-fail / fetchTelegramFeed mocked + error paths).
+- **Live smoke** (без мока): `fetchTelegramFeed('Golovina_design_ambersoftloft', 5)` вернул 5 реальных постов с корректными датами/пермалинками/картинками — селекторы `.tgme_widget_message`, `.tgme_widget_message_text`, `.tgme_widget_message_date a[href]`, `.tgme_widget_message_date time[datetime]`, `.tgme_widget_message_photo_wrap[style*=background-image]` живы в текущей разметке t.me/s/.
+- **Patterns**: см. `progress.md` (новые: «строгий https whitelist на URL'ах из untrusted DOM», «control-char strip через explicit code-point filter — обход `no-control-regex`», «linkedom + textContent → plain-text path без необходимости HTML-sanitizer'а вроде DOMPurify»).
+
+## 2026-05-26 — [T22] SEO components (MetaTags + SchemaPerson + YandexMetrica) + format.ts + seo.ts
+
+- **Status**: ✅ Done. Commit `7d5f60c ep01 T22: SEO components (MetaTags + SchemaPerson + YandexMetrica)`.
+- **Files changed**: `src/components/seo/MetaTags.astro` (new), `src/components/seo/SchemaPerson.astro` (new), `src/components/analytics/YandexMetrica.astro` (new), `src/lib/seo.ts` (new — pure helpers), `src/lib/format.ts` (new), `tests/unit/lib/seo.test.ts` (new), `tests/unit/lib/format.test.ts` (new), `src/components/layout/Layout.astro` (delegates head meta to MetaTags + SchemaPerson + YandexMetrica, title/description теперь optional).
+- **MetaTags**: title/description/canonical/OG/Twitter теги. Дефолты из `seo.json` через `getSiteSeo()`. Per-page override через props `title`, `description`, `ogImage`, `canonical`. Canonical строится через `buildCanonical(siteUrl, Astro.url.pathname)`, base — `Astro.site` (`astro.config.mjs#site`) с fallback на `seo.siteUrl`. OG image absolutized через `absoluteOgImage(siteUrl, path)` — если уже абсолютный, возвращается как есть.
+- **SchemaPerson**: один `<script type="application/ld+json">` с Person-схемой. `name`: «Светлана Головина», `jobTitle`: «Самозанятая», `occupation.name`: «Дизайнер интерьеров» (Принцип 7 — честная подача, без senior-cosplay). `sameAs` — 4 URL из contacts.json через `getContacts()`. Рендерится в `<head>` Layout'а, поэтому present на каждой странице.
+- **YandexMetrica**: читает `import.meta.env.PUBLIC_METRIKA_ID`, валидирует через `Number.isInteger > 0`. Если env пуст или не число — компонент вообще ничего не рендерит (no-op, проверено: 0 ссылок на `mc.yandex.ru` в dist/ без env). Если env валиден — рендерит inline script с consent gate: (а) при загрузке проверяет `localStorage['consent.metrica.v1']` — если `'granted'`, сразу инициализирует tag.js; (б) иначе подписывается на window-event `consent:metrica:granted` (once: true), который CookieBanner (T21, ещё не реализован) будет dispatch'ить на клик «ОК». Стандартный `<noscript><img>` пиксель-fallback на `mc.yandex.ru/watch/<id>` тоже отрисовывается. Verified: build с `PUBLIC_METRIKA_ID=12345678` инлайнит snippet с этим ID и noscript-pixel'ом; без env — пусто.
+- **Pure-lib split**: первая версия `src/lib/seo.ts` импортировала `getSiteSeo` (settings.ts → astro:content), от чего тесты падали в vitest вне Astro-runtime. Рефакторнул: `seo.ts` оставил только pure helpers (`buildCanonical`, `absoluteOgImage`) без зависимости от astro:content — теперь тестируется автономно. `getSiteSeo()` импортируют напрямую `MetaTags.astro` и `SchemaPerson.astro` (там Astro-runtime есть). Pattern: pure-helpers в одном файле, async-data-loaders в другом — pure-сторона остаётся юнит-тестируемой.
+- **format.ts**: `localeProjectType` маппа 4 enum-значений (`apartment` → «Квартира», `house` → «Дом», `studio` → «Студия», `commercial` → «Коммерческое помещение») с graceful fallback (unknown → возвращается как есть). `formatArea` → `<n> м²`, NaN/Infinity → пустая строка. `formatYear` → bare string. `formatPostDate` → `Intl.DateTimeFormat('ru-RU', { day:'numeric', month:'long', year:'numeric' })` для TelegramFeed (T16); invalid date → пустая строка.
+- **Tests**: 14 новых кейсов (4 `buildCanonical` + 3 `absoluteOgImage` + 2 `localeProjectType` + 2 `formatArea` + 1 `formatYear` + 2 `formatPostDate`). Total suite 59 passing across 4 файлов.
+- **Verification**: `pnpm test` 59/59, `pnpm typecheck` 0/0/0 на 25 .astro/ts файлах, `pnpm lint` clean, `pnpm format:check` clean, `pnpm build` зелёный. dist/index.html содержит валидный JSON-LD (4 sameAs URLs), полный набор OG+Twitter meta, и ноль ссылок на `mc.yandex.ru` без env.
+- **Patterns**: см. `progress.md` (новые: «pure-lib + data-loader split для vitest-совместимости», «inline analytics-snippet с deferred load через консент-event», «settings z.union: один narrowing-helper переиспользуется в N компонентах»).
+
+## Session E — Layout components + TG feed + SEO utils (closed 2026-05-26)
+
+Tasks: T14, T15, T22. Все exit-критерии из `session-plan.md` § Session E выполнены:
+
+- ✅ `git log --oneline` показывает 3 новых коммита: `43f7ea1 ep01 T14...`, `7aa6ddd ep01 T15...`, `7d5f60c ep01 T22...`.
+- ✅ `pnpm test` зелёный (59/59), включая XSS-payload тесты в `telegram-feed.test.ts` (script-теги и img-onerror стрипаются).
+- ✅ На главной (заглушка `/`) виден Header (с 4 nav-ссылками — клик в ep01 пока 404, после Session F будут работать) и Footer с 4 каналами + email + privacy-ссылкой. Контакты подгружаются из `contacts.json` через `getContacts()`.
+- ✅ Live `fetchTelegramFeed('Golovina_design_ambersoftloft', 5)` вернул 5 реальных постов (даты от 2026-03-03 до 2026-05-21, есть и с картинками, и без).
+- ✅ `view-source` главной показывает `<script type="application/ld+json">` Person-объект с 4 sameAs URL.
+- ✅ Progress Tracker для T14, T15, T22 отмечен в `tasks.md`.
+
+**Outstanding from this session (не блокируют Session F):**
+
+- `PUBLIC_METRIKA_ID` пока пуст — YandexMetrica рендерит ноль script-тегов (graceful no-op). Активация — Session J / activation checklist (T28). При установленном env var snippet работает корректно (build verified с `PUBLIC_METRIKA_ID=12345678` — script с этим ID, consent gate, noscript pixel).
+- CookieBanner (T21, Session G) ещё не реализован — listener `'consent:metrica:granted'` на window есть в YandexMetrica, но dispatch'ить его пока некому. Сразу после T21 цепочка консент → загрузка метрики заработает end-to-end.
+- TelegramFeed.astro компонент сам по себе ещё не написан — `fetchTelegramFeed` готов и протестирован, использование в Hero — Session F (T16).
+
+**Next session**: Session F — Three main pages (T16, T17, T19). Critical path: всё разблокировано — Sessions A, B, E завершены, contact-form (T20) ждёт ещё Session G + Session D (которая закрыта).
