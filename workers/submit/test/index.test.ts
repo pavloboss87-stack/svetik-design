@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import worker, { _resetRateLimitStoreForTests } from '../src/index.ts';
 
-const SITE_URL = 'https://svetik-design.pages.dev';
+const SITE_URL = 'https://svetik-design.svetik-design.workers.dev';
 const baseEnv = { PUBLIC_SITE_URL: SITE_URL };
 const validPayload = {
   name: 'Анна',
