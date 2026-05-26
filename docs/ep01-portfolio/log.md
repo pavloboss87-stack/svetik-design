@@ -660,3 +660,47 @@ Tasks: T24, T24a (+ T24a fix), T25. Все exit-критерии из `session-p
 
 ### Pending action (бра́т)
 Шаги 1–12 выше.
+
+## Session J — Lighthouse CI + branch protection + CF Pages deploy (partial close 2026-05-26)
+
+Tasks: T26 (✅ code done, CI/branch-protection enable pending brother), T27 (✅ instructions written, deploy pending brother). Все code-side exit-критерии из `session-plan.md` § Session J выполнены, все external-side остались бра́ту — это та же модель, что Session C (T12/T13 — wrangler deploy от бра́та), Session D (T23 deploy от бра́та), Session I (CSP validation на edge от бра́та).
+
+**Exit-критерии (`session-plan.md` § Session J):**
+
+- ✅ `git log --oneline` показывает 2 новых коммита: `24c9674 ep01 T26 ...`, `be6ea2c ep01 T27 ...` (плюс этот session-closing-notes коммит).
+- ⏸ PR с CI запущен; lint, typecheck, lighthouse — все green — ждёт `git push origin main` от бра́та + первый CI-ран. Локально все 4 гейта (`lint`, `format:check`, `typecheck`, `test`, `build`) зелёные на коммите T26.
+- ⏸ Попытка direct push в main отвергнута GitHub'ом — ждёт включение branch protection бра́том (6 шагов в README `## Branch protection setup`).
+- ⏸ `https://svetik-design.pages.dev/` → 200, виден сайт — ждёт создание CF Pages-проекта (T27 brother-checklist шаги 4–10).
+- ⏸ `https://svetik-design.pages.dev/admin/` → Decap login page — ждёт T27 шаг 11 (зависит от уже сделанных T11/T12/T13).
+- ⏸ `https://svetik-design.pages.dev/contact` → форма → submit → 200 mock — ждёт T27 шаг 11 + T23 deploy.
+- ⏸ Скриншот build-логов CF Pages сохранён в log.md или docs/guide-screenshots/ — ждёт T27 шаг 12.
+- ✅ Progress Tracker T26, T27 отмечен в `tasks.md`.
+
+**Что Session J дала прямо сейчас:**
+
+- `.github/workflows/ci.yml` — 4 status-check'а готовы; первый push в `origin/main` даст реальный CI-ран.
+- `.lighthouserc.json` — бюджет 0.95 на 7 маршрутах.
+- `README.md` секции `## CI` + `## Branch protection setup` + строка `pnpm test` в `## Quality gates` — оператив-ные инструкции для бра́та и для будущего разработчика-преемника (T29).
+- `docs/ep01-portfolio/log.md` обновлён двумя task-блоками T26/T27 + этим session-closing блоком.
+- `progress.md` обновлён двумя новыми паттернами (CI-job-name = required-check, lhci-static-server без CF Pages headers).
+
+**Brother-checklist (compact summary, полные шаги — в T26 и T27 блоках выше):**
+
+| # | Действие | Артефакт |
+|---|---|---|
+| 1 | `git push origin main` (21 commit, включая T26 + T27 + Session J closing notes) | `origin/main` синхронизирован; CI запустится автоматом |
+| 2 | Открыть GitHub → Actions → workflow `ci` → проверить, что 4 job'а зелёные | Если красные — open the artifact `lighthouse-report` и сравнить с budget; согласовать с Claude фикс (см. T26 «Pending action») |
+| 3 | GitHub → Settings → Branches → Add rule (`main`, 6 шагов из README) | Direct push в main отвергается |
+| 4 | `cd workers/submit && wrangler deploy` (если ещё не сделано в Session D) | Submit Worker URL — нужен для CF Pages env vars |
+| 5 | dash.cloudflare.com → Workers & Pages → Create application → Pages → Connect to Git (12 шагов T27) | `https://svetik-design.pages.dev/` живой |
+| 6 | Ручной обход 7 маршрутов + curl -I check + screenshot build-log | log.md финальный update от Claude |
+
+**Outstanding from this session (не блокируют Session K, кроме как косвенно):**
+
+- Без T27 deploy Session K (T30 E2E Playwright) можно делать локально, но не против превью. Бриф Session K: «Pre-flight: Session J завершена. Сайт на превью, CI зелёный». E2E локально работает на `pnpm preview` — для CI нужен превью или localhost. Достаточно локального для всех тестов кроме «admin login» (зависит от OAuth Worker = реального URL).
+- Без CF Pages-деплоя нельзя замерить реальный Lighthouse mobile ≥ 95 на edge. Локальный CI-ран на staticDistDir — это proxy (без CSP-headers и без CF Pages-CDN throttling). Реальный замер — после T27 шага 11 (curl + Chrome DevTools Lighthouse Mobile против `svetik-design.pages.dev`).
+- Без branch protection ходит риск direct push'а в main bypass'ом CI. Чем дольше остаётся — тем больше шансов поломки. Включить надо в той же сессии бра́та, что и push (минут 5 после).
+
+**Next session**: Session K — E2E Playwright (T30). Pre-flight: формально нужны deploy + branch protection, фактически E2E можно начинать локально через `pnpm preview` сразу после Session J code-стороны. Брат может параллельно с Session K делать T27 deploy.
+
+**Альтернатива:** Session L (Documentation — T28 + T29) тоже разблокирована. T28 «guide-for-svetlana.md» — основной артефакт передачи; писать её в session с большим контекст-будетом разумно. Бриф Session J предлагает Session K следующей, но это не строгая зависимость.
