@@ -1,0 +1,38 @@
+---
+import { getSiteSeo } from '../../lib/settings';
+import { absoluteOgImage, buildCanonical } from '../../lib/seo';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  canonical?: string;
+}
+
+const { title, description, ogImage, canonical } = Astro.props;
+
+const defaults = await getSiteSeo();
+
+const siteUrl = (Astro.site?.toString() ?? defaults.siteUrl).replace(/\/+$/, '');
+const resolvedTitle = title ?? defaults.siteName;
+const resolvedDescription = description ?? defaults.description;
+const resolvedOgImage = absoluteOgImage(siteUrl, ogImage ?? defaults.defaultOgImage);
+const resolvedCanonical = canonical ?? buildCanonical(siteUrl, Astro.url.pathname);
+---
+
+<title>{resolvedTitle}</title>
+<meta name="description" content={resolvedDescription} />
+<link rel="canonical" href={resolvedCanonical} />
+
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="ru_RU" />
+<meta property="og:site_name" content={defaults.siteName} />
+<meta property="og:title" content={resolvedTitle} />
+<meta property="og:description" content={resolvedDescription} />
+<meta property="og:url" content={resolvedCanonical} />
+<meta property="og:image" content={resolvedOgImage} />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={resolvedTitle} />
+<meta name="twitter:description" content={resolvedDescription} />
+<meta name="twitter:image" content={resolvedOgImage} />

@@ -1,0 +1,29 @@
+---
+import { getContacts } from '../../lib/settings';
+import { getSiteSeo } from '../../lib/settings';
+
+const contacts = await getContacts();
+const seo = await getSiteSeo();
+
+const siteUrl = (Astro.site?.toString() ?? seo.siteUrl).replace(/\/+$/, '');
+
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Светлана Головина',
+  jobTitle: 'Самозанятая',
+  occupation: {
+    '@type': 'Occupation',
+    name: 'Дизайнер интерьеров',
+  },
+  url: siteUrl,
+  sameAs: [
+    contacts.telegramPersonal.url,
+    contacts.telegramBlog.url,
+    contacts.vk.url,
+    contacts.maxMe.url,
+  ],
+};
+---
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(personSchema)} />
