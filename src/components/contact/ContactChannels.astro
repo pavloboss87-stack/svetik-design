@@ -1,0 +1,38 @@
+---
+import { getContacts } from '../../lib/settings';
+
+const contacts = await getContacts();
+const channels = [contacts.telegramPersonal, contacts.telegramBlog, contacts.vk, contacts.maxMe];
+---
+
+<section aria-labelledby="contact-channels" class="not-prose">
+  <h2 id="contact-channels" class="font-display text-xl text-neutral-900">Каналы связи</h2>
+  <ul class="mt-4 space-y-3 text-base">
+    {
+      channels.map((channel) => (
+        <li>
+          <a
+            href={channel.url}
+            rel="noopener"
+            target="_blank"
+            class="hover:text-neutral-900"
+            aria-label={`${channel.label}: ${channel.handle}`}
+          >
+            <span class="text-neutral-500">{channel.label}:</span>{' '}
+            <span class="underline underline-offset-4">{channel.handle}</span>
+          </a>
+        </li>
+      ))
+    }
+    <li>
+      <a
+        href={`mailto:${contacts.email}`}
+        class="hover:text-neutral-900"
+        aria-label={`Почта: ${contacts.email}`}
+      >
+        <span class="text-neutral-500">Почта:</span>{' '}
+        <span class="underline underline-offset-4">{contacts.email}</span>
+      </a>
+    </li>
+  </ul>
+</section>

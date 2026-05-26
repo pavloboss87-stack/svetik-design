@@ -1,0 +1,48 @@
+---
+import { Image } from 'astro:assets';
+import { getEntry, render } from 'astro:content';
+import Layout from '../components/layout/Layout.astro';
+
+const entry = await getEntry('pages', 'about');
+if (!entry) throw new Error('pages/about entry not found');
+const { Content } = await render(entry);
+const photo = entry.data.authorPhoto;
+---
+
+<Layout
+  title="Обо мне — Светлана Головина"
+  description="Дизайнер интерьеров, диплом о профессиональной переподготовке. Собираю первое портфолио концепт-проектов."
+>
+  <article class="mx-auto max-w-5xl px-6 py-16 md:py-24">
+    <h1 class="font-display text-4xl tracking-tight text-neutral-900 md:text-5xl">
+      {entry.data.title}
+    </h1>
+
+    <div class="mt-12 grid gap-12 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      <figure class="not-prose">
+        {
+          photo ? (
+            <Image
+              src={photo}
+              alt="Светлана Головина"
+              widths={[400, 600, 800]}
+              sizes="(min-width: 768px) 33vw, 80vw"
+              class="aspect-square w-full bg-neutral-100 object-cover"
+            />
+          ) : (
+            <div
+              class="flex aspect-square w-full items-center justify-center bg-neutral-100 text-sm text-neutral-500"
+              aria-label="Фото в работе"
+            >
+              Фото в работе
+            </div>
+          )
+        }
+      </figure>
+
+      <div class="prose prose-neutral max-w-none text-base leading-relaxed text-neutral-800">
+        <Content />
+      </div>
+    </div>
+  </article>
+</Layout>

@@ -1,0 +1,25 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+
+interface Props {
+  service: CollectionEntry<'services'>;
+}
+
+const { service } = Astro.props;
+const { Content } = await render(service);
+---
+
+<article class="border-t border-neutral-200 py-10 first:border-t-0 first:pt-0">
+  <h2 class="font-display text-2xl text-neutral-900">{service.data.title}</h2>
+  <p class="mt-2 text-base text-neutral-700">{service.data.tagline}</p>
+  <div class="prose prose-neutral mt-6 max-w-2xl text-sm leading-relaxed text-neutral-800">
+    <Content />
+  </div>
+  {
+    service.data.priceNote && (
+      <p class="mt-6 text-sm text-neutral-600">
+        <span class="text-neutral-500">Стоимость:</span> {service.data.priceNote}
+      </p>
+    )
+  }
+</article>
