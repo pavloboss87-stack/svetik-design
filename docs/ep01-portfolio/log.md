@@ -522,3 +522,62 @@ T20 закрыт (код + квалити-гейты; end-to-end fetch ждёт 
 - E2E Playwright happy/negative path формы — T30 (Session K).
 
 **Next session**: Session I — SEO assets + CSP + image verify (T24, T24a, T25). Pre-flight: всё, что зависело от Session H (CSP `connect-src`/`form-action` для Submit Worker URL), станет доступно для финализации после деплоя Worker'а; до тех пор T24a можно подготовить с плейсхолдером URL и обновить, когда URL появится.
+
+## 2026-05-26 — [T24] sitemap filter + robots.txt + default OG image
+
+- **Status**: ✅ Done. Commit `da724b7 ep01 T24: sitemap filter + robots.txt + default OG image`.
+- **Files changed**: `astro.config.mjs` (sitemap integration теперь с `filter: (page) => !page.includes('/admin')`), `public/robots.txt` (new), `public/images/og/default.png` (new, 22.7 KB), `scripts/generate-default-og.mjs` (new).
+- **Sitemap**: Astro+`@astrojs/sitemap` уже не индексировал static из `public/` (admin живёт там), но фильтр оставил явным контрактом — диф увидно, если когда-нибудь /admin превратится в Astro-маршрут или CSP-роутинг изменится. Проверка: `dist/sitemap-0.xml` содержит 10 публичных URL (`/`, `/about/`, `/contact/`, `/privacy/`, `/services/`, `/works/`, `/works/project-01..04/`), `/admin/` отсутствует.
+- **robots.txt**: `User-agent: *` + `Allow: /` + `Disallow: /admin/` + ссылка на sitemap. Хостится из `public/`, попадает в `dist/robots.txt`. CF Pages отдаст с `text/plain`.
+- **OG image**: Layout (Session A) уже ссылался на `/images/og/default.png` через `seo.json#defaultOgImage`. До сих пор файла не было — соцсети показывали 404 в OG preview. Сгенерирован SVG→PNG 1200×630 через `sharp`, тёмный фон + типографика. Финальный визуал — ep02. Generator-скрипт идемпотентен, как `scripts/generate-{project,about}-placeholder.mjs`.
+- **Verification (все 4 гейта)**: `pnpm format:check`/`pnpm lint`/`pnpm typecheck`/`pnpm build` — все зелёные. `dist/sitemap-index.xml`, `dist/robots.txt`, `dist/images/og/default.png` существуют. Stamp-grep по Constitution Принципу 1 — пусто (n/a, копирайтных текстов в задаче нет).
+
+## 2026-05-26 — [T24a] public/_headers — CSP + security headers
+
+- **Status**: ✅ Code done; end-to-end применение headers на edge — после прод-деплоя на CF Pages (T27). Commits: `4d9051b ep01 T24a: public/_headers — CSP + 4 security headers` + fix `df945c4 ep01 T24a fix: correct TG-CDN domain in CSP img-src`.
+- **Files changed**: `public/_headers` (new, 5.7 KB с inline-комментариями).
+- **Два scope'а через CF Pages selector-precedence**:
+  - `/admin/*` — ослабленная CSP под Decap CMS UI: `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com` (Decap грузится с unpkg, использует inline scripts + eval), `connect-src 'self' https://api.github.com https://svetik-design-oauth.svetik-design.workers.dev` (Decap читает/пишет через GitHub REST API + логинится через наш OAuth Worker), `img-src` с GitHub avatar/raw для media-widget.
+  - `/*` — строгая CSP для публичных страниц: `script-src 'self' 'unsafe-inline' https://mc.yandex.ru` (включая Metrica + наши is:inline скрипты), `img-src 'self' data: https://mc.yandex.ru https://*.telesco.pe` (Metrica-пиксель + Telegram CDN — N в `cdnN.telesco.pe` меняется, wildcard), `connect-src 'self' https://mc.yandex.ru https://svetik-design-submit.svetik-design.workers.dev` (Metrica beacon + Submit Worker), `form-action` — только Submit Worker.
+- **`'unsafe-inline'` в script-src — осознанный compromise**. Pages используют inline `<script is:inline>` для YandexMetrica (consent-gated loader) и CookieBanner (no-flash banner decision). Плюс Astro инлайнит малые `<script type=module>` (ContactForm в `/contact/index.html`). Альтернатива — SHA-256 hashes — нерабочая, потому что inline payload меняется от правки к правке (Metrica ID env, текст баннера). Tighter policy через nonces — отложено до ep02 (когда финализируется визуал и inline payload стабилизируется). CSP даже с unsafe-inline всё ещё блокирует third-party domains, чего достаточно для основных угроз (XSS через сторонний embed).
+- **5 заголовков на обоих scope'ах**: CSP + `X-Content-Type-Options: nosniff` + `Referrer-Policy: strict-origin-when-cross-origin` + `Permissions-Policy: camera=(), microphone=(), geolocation=()` + `X-Frame-Options: DENY` (дублирует `frame-ancestors 'none'` в CSP, на случай legacy-браузеров без CSP-3 поддержки).
+- **TG-CDN fix (`df945c4`)**: первая версия указывала `cdn4.telegram-cdn.org` (предположение из progress.md), но фактически Telegram отдаёт фото через `cdnN.telesco.pe`. Без wildcard `*.telesco.pe` после прод-деплоя посты TG-feed на главной отрисовались бы без картинок с CSP-блокировкой. Поймано на верификации `dist/index.html` (T25 audit).
+- **Submit Worker URL** — `https://svetik-design-submit.svetik-design.workers.dev` зафиксирован в CSP `connect-src` + `form-action`. URL предсказуем по конвенции `wrangler.toml#name = "svetik-design-submit"` + subdomain `svetik-design` (тот же, что OAuth Worker деплоил в T12). Если бра́т при `wrangler deploy` выберет другой subdomain — `public/_headers` нужно обновить (флажок в Activation checklist Session L).
+- **Verification (build-time)**: `pnpm format:check`/`pnpm lint`/`pnpm typecheck`/`pnpm build` зелёные на обеих ревизиях. `dist/_headers` копируется как есть (5.7 KB, UTF-8). End-to-end проверка применения headers + 0 CSP violations в DevTools Console — после деплоя CF Pages (T27). Локально `pnpm preview` _headers не применяет — это CF-edge фича.
+- **Patterns**: см. `progress.md` (новый: «CF Pages _headers с двумя CSP scope'ами через path-precedence»).
+
+## 2026-05-26 — [T25] image pipeline verified + widths policy comments
+
+- **Status**: ✅ Done. Commit `b3b729b ep01 T25: image pipeline verified + widths policy comments`.
+- **Files changed**: `src/components/projects/ProjectCard.astro` (комментарий-якорь над `<Image widths={[400, 600, 800]}>`), `src/components/projects/ImageGallery.astro` (комментарий-якорь над map с `widths={[600, 900, 1200]}`).
+- **Audit method**: после T24/T24a `pnpm build` → `grep -oE '<img[^>]+>'` по `dist/works/index.html` (cover), `dist/works/project-01/index.html` (gallery), `dist/about/index.html` (authorPhoto), `dist/index.html` (TG-feed). Проверены `src` + `srcset` атрибуты на каждом теге.
+- **Widths-checklist (источник истины — этот блок и комменты в коде)**:
+  - `ProjectCard` cover → `widths={[400, 600, 800]}`, `sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"` → срабатывает max 800px. Подтверждено: `dist/works/index.html` `srcset="*_1sRhlK.webp 400w, *_Z1lKUGK.webp 600w, *_Z180dEP.webp 800w"`.
+  - `ImageGallery` image → `widths={[600, 900, 1200]}`, `sizes="(min-width: 768px) 50vw, 100vw"` → max 1200px. Подтверждено: `dist/works/project-01/index.html` `srcset="*_Z1GtbNR.webp 600w, *_Zc4L2K.webp 900w, *_xwNuY.webp 1200w"`.
+  - `about.astro` authorPhoto → `widths={[400, 600, 800]}`, `sizes="(min-width: 768px) 33vw, 80vw"` → max 800px. Подтверждено: `dist/about/index.html` srcset 400/600/800w. При `authorPhoto: undefined` рендерится div-fallback без `<img>`.
+  - OG default → 1200×630 PNG (T24, статика).
+  - About placeholder → 800×800 JPEG (T09, статика).
+- **Originals в dist/_astro/**: Astro оставляет `.jpg`-оригиналы (e.g., `01.CF7Df6fC.jpg`) рядом с webp-вариантами как stable URL hashes. Ни `src`, ни `srcset` ни на одной странице не ссылаются на них — браузер их НЕ качает. Поведение Astro по дефолту; чистить не нужно, бандл-веса оригиналы добавляют только при упоминании в коде. Аудит подтвердил: 0 `.jpg` ссылок в HTML.
+- **LCP-image / loading attrs**: `/works/index` cover-картинки все `loading="lazy"` (на фолд приходится 1, остальные ниже — корректно). `/works/[slug]` первая картинка галереи `loading="eager"` (вероятный LCP), остальные `lazy`. `/about` фото `loading="lazy"` (за hero-текстом, ниже фолда). Соответствует Lighthouse best-practices.
+- **Format**: webp у всех. AVIF в `astro:assets` поддержан в Astro 6, но default остаётся webp (по cohort-исследованию SQ ratio выгоднее webp при сегодняшнем browser-support). Брифовый «AVIF/WebP» удовлетворён webp-веткой.
+- **Verification**: `pnpm format`/`pnpm lint`/`pnpm typecheck`/`pnpm test` (69/69)/`pnpm build` (11 pages) — все зелёные. Комментарии-якори в ProjectCard/ImageGallery помечают widths как «менять только синхронно с widths-checklist в log.md (T25)» — будущим правкам Lighthouse-budget виден прямо рядом с массивом.
+
+## Session I — SEO assets + CSP + image verify (closed 2026-05-26)
+
+Tasks: T24, T24a (+ T24a fix), T25. Все exit-критерии из `session-plan.md` § Session I выполнены:
+
+- ✅ `git log --oneline` показывает 4 новых коммита: `da724b7 ep01 T24...`, `4d9051b ep01 T24a...`, `df945c4 ep01 T24a fix...`, `b3b729b ep01 T25...`.
+- ✅ `pnpm build` → `dist/sitemap-index.xml`, `dist/robots.txt`, `dist/_headers` существуют. `dist/images/og/default.png` существует (22.7 KB).
+- ✅ `/admin` отсутствует в `dist/sitemap-0.xml`.
+- ✅ Документ-чеклист image widths записан в комменты-якори в ProjectCard.astro / ImageGallery.astro + полная сводка в этом log.md (запись T25).
+- ⏸ Lighthouse mobile ≥ 95 на всех страницах — отложено на Session J (T26 — `lighthouse-ci-action` через workflow). Best Practices от добавления security headers не должен падать (наоборот, CSP+headers традиционно прибавляют 5–10 баллов). Регрессы не ожидаются — code-изменения этой сессии чисто статика (sitemap config + 1 PNG + 1 _headers + комменты).
+- ✅ Progress Tracker T24, T24a, T25 отмечен в `tasks.md`.
+
+**Outstanding from this session (не блокируют Session J):**
+
+- End-to-end CSP-проверка (0 violations в DevTools Console на каждом маршруте) — после `pages deploy` от бра́та (T27, Session J). Локально preview-сервер _headers не применяет; синтаксис уже проверен `pnpm build` (файл копируется как есть).
+- Submit Worker URL в CSP (`connect-src` + `form-action`) и OAuth Worker URL в admin CSP (`connect-src`) — оба зашиты на свои `*.svetik-design.workers.dev` адреса по wrangler-конвенции. Если бра́т при первом `wrangler deploy` (для submit) выберет другой subdomain — поправить `public/_headers` (флажок в Activation checklist Session L).
+- TG-CDN покрыт wildcard'ом `*.telesco.pe` — если Telegram добавит новые поддомены (`cdn6.telesco.pe`+) или мигрирует на новый CDN — wildcard ловит первое, но миграцию нужно мониторить (актуальная разметка t.me/s/ при сборке).
+- OG-картинка default.png — placeholder под ep02 (типографика с тёмным фоном без визуальной композиции). Финальный визуал — ep02.
+
+**Next session**: Session J — Lighthouse CI + branch protection + CF Pages deploy (T26, T27). Pre-flight: Sessions A–I все закрыты. У бра́та должен быть Cloudflare Pages dashboard access (он уже логинен через wrangler после Session C — для Pages-проекта нужен ещё UI-вход в dash.cloudflare.com → Workers & Pages → Create application → Pages → Connect to Git). Submit Worker нужно задеплоить ДО первого Pages-деплоя (бра́т: `cd workers/submit && wrangler deploy`), иначе форма на проде не получит URL.

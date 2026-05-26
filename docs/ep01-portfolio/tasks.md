@@ -991,9 +991,9 @@
 - [x] T20: ContactForm + ПДн consent + wiring
 
 ### Wave 10
-- [ ] T24: sitemap + robots + default OG image
-- [ ] T24a: CSP + security headers (public/_headers)
-- [ ] T25: Image pipeline verify
+- [x] T24: sitemap + robots + default OG image
+- [x] T24a: CSP + security headers (public/_headers)
+- [x] T25: Image pipeline verify
 
 ### Wave 11
 - [ ] T26: Lighthouse CI workflow + бюджет 95+ + branch protection
