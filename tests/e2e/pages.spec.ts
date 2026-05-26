@@ -24,6 +24,14 @@ for (const route of PUBLIC_ROUTES) {
   });
 }
 
+test('GET / → Hero CTA "Смотреть работы" presents and links to /works', async ({ page }) => {
+  await page.goto('/');
+  const cta = page.locator('[data-testid="hero-cta"]');
+  await expect(cta).toBeVisible();
+  await expect(cta).toContainText('Смотреть работы');
+  await expect(cta).toHaveAttribute('href', '/works');
+});
+
 test('GET /no-such-page → 404 page renders Layout', async ({ page }) => {
   const response = await page.goto('/no-such-page-e2e/');
   expect(response).not.toBeNull();

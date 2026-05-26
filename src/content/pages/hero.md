@@ -1,5 +1,6 @@
 ---
 title: Светлана Головина
+# TODO(T12): финальный Hero copy v1 — текущий body остаётся placeholder ep01, заменяется в Session D
 ---
 
 PLACEHOLDER — финальный текст в ep02.
