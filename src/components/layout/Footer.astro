@@ -1,0 +1,48 @@
+---
+import { getContacts } from '../../lib/settings';
+
+const contacts = await getContacts();
+const channels = [contacts.telegramPersonal, contacts.telegramBlog, contacts.vk, contacts.maxMe];
+
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-24 border-t border-neutral-200 text-sm text-neutral-700">
+  <div class="mx-auto grid max-w-5xl gap-8 px-6 py-12 md:grid-cols-2">
+    <section aria-labelledby="footer-channels">
+      <h2 id="footer-channels" class="mb-3 font-display text-base text-neutral-900">
+        Каналы связи
+      </h2>
+      <ul class="space-y-2">
+        {
+          channels.map((channel) => (
+            <li>
+              <a href={channel.url} rel="noopener" target="_blank" class="hover:text-neutral-900">
+                <span class="text-neutral-500">{channel.label}:</span> <span>{channel.handle}</span>
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a href={`mailto:${contacts.email}`} class="hover:text-neutral-900">
+            <span class="text-neutral-500">Почта:</span>
+            <span>{contacts.email}</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="footer-legal" class="md:text-right">
+      <h2 id="footer-legal" class="mb-3 font-display text-base text-neutral-900">
+        Юридические сведения
+      </h2>
+      <p>Самозанятая. Налог на профессиональный доход.</p>
+      <p class="mt-2">
+        <a href="/privacy" class="underline underline-offset-4 hover:text-neutral-900">
+          Политика обработки персональных данных
+        </a>
+      </p>
+      <p class="mt-4 text-neutral-500">© {year} Светлана Головина</p>
+    </section>
+  </div>
+</footer>

@@ -1,0 +1,44 @@
+---
+const navItems = [
+  { href: '/works', label: 'Работы' },
+  { href: '/about', label: 'Обо мне' },
+  { href: '/services', label: 'Услуги' },
+  { href: '/contact', label: 'Контакты' },
+];
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<header class="border-b border-neutral-200">
+  <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-5">
+    <a
+      href="/"
+      class="font-display text-lg leading-none tracking-tight text-neutral-900 hover:text-neutral-600"
+    >
+      Светлана Головина
+    </a>
+    <nav aria-label="Главная навигация">
+      <ul class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        {
+          navItems.map((item) => {
+            const isActive = currentPath === item.href;
+            return (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  class:list={[
+                    'hover:text-neutral-600',
+                    isActive ? 'text-neutral-900 underline underline-offset-4' : 'text-neutral-700',
+                  ]}
+                >
+                  {item.label}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
