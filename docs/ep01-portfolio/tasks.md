@@ -996,7 +996,7 @@
 - [x] T25: Image pipeline verify
 
 ### Wave 11
-- [ ] T26: Lighthouse CI workflow + бюджет 95+ + branch protection
+- [x] T26: Lighthouse CI workflow + бюджет 95+ + branch protection
 
 ### Wave 12
 - [ ] T27: CF Pages project + env vars + первый prod-деплой
