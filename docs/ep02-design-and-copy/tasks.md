@@ -667,11 +667,11 @@ T01 → T07 → T09 → T10 → T12 → T15 → T17 → T20 → T22 → T23 → 
 ## Progress Tracker — ep02-design-and-copy
 
 ### Wave 1
-- [ ] T01: Замена Fraunces → PT Serif (cyrillic-only)
-- [ ] T02: tokens.css финальная шкала
+- [x] T01: Замена Fraunces → PT Serif (cyrillic-only)
+- [x] T02: tokens.css финальная шкала
 - [ ] T03: IOPaint local setup (manual)
-- [ ] T26: Stop-list grep gate в CI (hardening)
-- [ ] T27: PR template с copy-debt checklist (hardening)
+- [x] T26: Stop-list grep gate в CI (hardening)
+- [x] T27: PR template с copy-debt checklist (hardening)
 
 ### Wave 2
 - [ ] T04: Fonttools cyrillic check
