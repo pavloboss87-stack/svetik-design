@@ -328,7 +328,7 @@ collections:
               name: siteUrl,
               label: Базовый URL сайта,
               widget: string,
-              hint: 'Без слэша на конце, например https://svetik-design.pages.dev',
+              hint: 'Без слэша на конце, например https://svetik-design.svetik-design.workers.dev',
             }
           - {
               name: defaultOgImage,

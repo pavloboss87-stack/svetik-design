@@ -130,14 +130,14 @@ pnpm test
 ```powershell
 # Mock 200
 curl.exe -X POST `
-  -H "Origin: https://svetik-design.pages.dev" `
+  -H "Origin: https://svetik-design.svetik-design.workers.dev" `
   -H "Content-Type: application/json" `
   -d '{"name":"x","contact":"x@x.x","message":"x","consent":true}' `
   https://svetik-design-submit.<your-handle>.workers.dev/api/submit
 
 # 400 consent_required
 curl.exe -X POST `
-  -H "Origin: https://svetik-design.pages.dev" `
+  -H "Origin: https://svetik-design.svetik-design.workers.dev" `
   -H "Content-Type: application/json" `
   -d '{"name":"x","contact":"x@x.x","message":"x"}' `
   https://svetik-design-submit.<your-handle>.workers.dev/api/submit

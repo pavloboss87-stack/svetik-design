@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 
-Sitemap: https://svetik-design.pages.dev/sitemap-index.xml
+Sitemap: https://svetik-design.svetik-design.workers.dev/sitemap-index.xml

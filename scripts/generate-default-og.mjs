@@ -13,7 +13,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" v
   <rect width="1200" height="630" fill="#1c1917"/>
   <text x="80" y="280" font-family="Georgia, serif" font-size="72" font-weight="400" fill="#fafaf9">Светлана Головина</text>
   <text x="80" y="360" font-family="Inter, sans-serif" font-size="36" font-weight="400" fill="#a8a29e">Дизайн интерьеров</text>
-  <text x="80" y="550" font-family="Inter, sans-serif" font-size="22" fill="#78716c">svetik-design.pages.dev</text>
+  <text x="80" y="550" font-family="Inter, sans-serif" font-size="22" fill="#78716c">svetik-design.svetik-design.workers.dev</text>
 </svg>`;
 
 await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toFile(out);

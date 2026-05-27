@@ -706,6 +706,7 @@ T01 → T07 → T09 → T10 → T12 → T15 → T17 → T20 → T22 → T23 → 
 - [ ] T12: Hero copy
 - [ ] T13: About copy
 - [ ] T14: project-04 summary + concept (watermark-кадры остаются — текст описывает концепт)
+- [x] **Interim (Session D, 2026-05-27)**: scaffold v0 — Claude написал примеры Hero / About / project-04 summary+concept по структуре T12/T13/T14 на ветке `feature/ep02-copy-scaffold`. Тексты явно помечены маркером в frontmatter (`# SCAFFOLD v0 (Claude)`) и в body (`*— Пример текста. Заменяется авторским драфтом в T##.*`). Stop-list grep + build + test + typecheck — зелёные. **PR не мерджится в main**, пока Светлана не заменит примеры своим первичным драфтом и не пройдёт редактуру брата (см. log.md → Session D запись).
 
 ### Wave 6
 - [ ] T15: Editorial review + Phase 3 PR merge

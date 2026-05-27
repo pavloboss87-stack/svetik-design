@@ -60,7 +60,7 @@ src/
 │   └── about/              # placeholder.jpg для authorPhoto
 ├── components/
 │   ├── layout/             # Layout + Header + Footer
-│   ├── home/               # Hero + ManifestoBlock + TelegramFeed
+│   ├── home/               # Hero + TelegramFeed
 │   ├── projects/           # ProjectCard + ProjectMeta + ImageGallery
 │   ├── services/           # ServiceCard
 │   ├── contact/            # ContactChannels + ContactForm (vanilla JS, no React)
@@ -127,11 +127,13 @@ npm-зависимостей — один раз локально через
 
 ## Деплой
 
-**Pages**: автоматом при push в `main`. Cloudflare Pages-проект
-`svetik-design` подключён к репозиторию, build command
+**Static site**: автоматом при push в `main`. Cloudflare Workers Builds
+проект `svetik-design` подключён к репозиторию, build command
 `pnpm install --frozen-lockfile && pnpm build`, output `dist/`,
-Node 22. Превью на `https://svetik-design.pages.dev`. Каждый PR получает
-свой preview-URL `<hash>.svetik-design.pages.dev`.
+Node 22. Production URL — `https://svetik-design.svetik-design.workers.dev`.
+Каждый PR получает свой preview-URL вида
+`<version>-svetik-design.svetik-design.workers.dev`
+(см. CF Workers Dashboard → Deployments).
 
 **Workers**: руками через wrangler.
 
@@ -296,7 +298,7 @@ middleware. Пока инлайн-payload меняется от правки к 
 1. Локально проверь синтаксис: `pnpm build`, `dist/_headers` должен
    быть точной копией исходника.
 2. Деплой через push в main.
-3. На превью: `curl.exe -I https://svetik-design.pages.dev/` — должен
+3. На превью: `curl.exe -I https://svetik-design.svetik-design.workers.dev/` — должен
    вернуть обновлённый CSP в `content-security-policy:`.
 4. В DevTools Console на каждом затронутом маршруте — 0 CSP-violations.
 
