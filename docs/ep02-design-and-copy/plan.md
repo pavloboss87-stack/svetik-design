@@ -13,7 +13,7 @@
   - Заполнение `src/styles/tokens.css` финальной шкалой типографики, межстрочного интервала, трекинга, пространств; минимальная палитра (paper + ink + один акцентный нейтральный).
   - Типографический Hero без фото (Schema 1 из research.md → Step 4.2). Photo-crop отложен в ep03 после ретуши watermark pilot'а.
   - Финальные тексты в `src/content/pages/*.md` и `src/content/services/*.md`: Hero (~25–60 слов), About (~250–400 слов), Services intro (~80–150 слов), Contact intro (~40–80 слов), 3 service bodies (~120–180 слов каждое).
-  - Pilot-проект **project-04 (дом 84 м² Подмосковье)** оформлен полностью: ретушь watermark на 4 кадрах через IOPaint; финальный summary (≤200 символов) и финальный concept (3–5 предложений) в `src/content/projects/project-04.md`; страница `/works/project-04` проходит визуальный обзор в новой типографике без правок шаблона.
+  - Pilot-проект **project-04 (дом 84 м² Подмосковье)** оформлен на уровне копирайта и типографики: финальный summary (≤200 символов) и финальный concept (3–5 предложений) в `src/content/projects/project-04.md`; страница `/works/project-04` проходит визуальный обзор в новой типографике без правок шаблона. **Ретушь watermark на 4 кадрах через IOPaint — deferred to Svetlana's post-launch work** (см. [Phase 2](#phase-2--ретушь-watermark-pilot-проекта-project-04--deferred-session-c-pivot-2026-05-27) и [`docs/guide-for-svetlana.md §3`](../guide-for-svetlana.md#3-ретушь-watermark-на-фото-проектов)). До ретуши кадры project-04 остаются с watermark Homestyler, существующая UI-плашка «Концепт-проект · фото в обработке» — корректное honest framing по Принципу 7.
   - Шаблон страницы проекта проверен на оставшихся трёх проектах (project-01/02/03) на placeholder-контенте — никаких визуальных регрессий.
   - Синхронизация `public/admin/index.html` с новыми шрифтами — preview Decap совпадает с продом.
   - Регрессионный тест на типографику (snapshot или Playwright-чек, что заголовок страницы проекта рендерится в PT Serif, не в системном serif fallback) — защита от Fraunces 2.0.
@@ -196,9 +196,11 @@ svetik-design/
 - [ ] Запустить Lighthouse CI локально на новой типографике: убедиться, что все 4 метрики mobile ≥ 95. Если упало — оптимизация (unicode-range subset, более узкий выбор весов, font-display tuning).
 - [ ] Открыть PR в `main`, дождаться зелёного CI, merge.
 
-### Phase 2 — Ретушь watermark pilot-проекта (project-04)
+### Phase 2 — Ретушь watermark pilot-проекта (project-04) — DEFERRED (Session C pivot 2026-05-27)
 
-**Deliverable**: 4 retouched кадра project-04 в `src/assets/projects/project-04/` без видимого watermark; PR `feature/ep02-pilot-images` с обновлёнными ассетами и без правок текста/шаблона. Эта фаза не блокируется Phase 1 и может идти параллельно, но **должна закрыться до Phase 3** (копирайт-сессия требует визуальной картины проекта перед собой).
+> **Pivot 2026-05-27**: фаза целиком вынесена за пределы ep02 в зону Светланы (post-launch). Обоснование: ретушь — её работа по гайду ([`docs/guide-for-svetlana.md §3`](../guide-for-svetlana.md#3-ретушь-watermark-на-фото-проектов)), не Claude. До тех пор кадры project-04 остаются с watermark Homestyler; существующая UI-плашка «Концепт-проект · фото в обработке» (рендерится по `isConcept: true`) — корректное honest framing по Принципу 7. Phase 3 копирайт пишет project-04 с watermark-кадрами как референсом (концепт остаётся концептом, текст описывает то, что есть, а не «как будет, когда отретушируется»). Когда Светлана сама пройдёт ретушь — она зальёт новые файлы через админку и снимет галку `isConcept`, плашка автоматически пропадёт. **Бриф оставлен ниже для истории.**
+
+**Deliverable** (deferred): 4 retouched кадра project-04 в `src/assets/projects/project-04/` без видимого watermark; PR `feature/ep02-pilot-images` с обновлёнными ассетами и без правок текста/шаблона. Эта фаза не блокируется Phase 1 и может идти параллельно, но **должна закрыться до Phase 3** (копирайт-сессия требует визуальной картины проекта перед собой).
 
 - [ ] Установить IOPaint локально по инструкции из [`docs/guide-for-svetlana.md`](../guide-for-svetlana.md) (если не установлен). Pre-trained модель LaMa.
 - [ ] Прогнать batch-обработку папки `Portfolio/4/` (источник 4 кадров project-04) через IOPaint с маской на область watermark Homestyler. Watermark на однородном фоне — типовая работа для LaMa.
@@ -233,7 +235,8 @@ svetik-design/
 - [ ] **Contact intro (40–80 слов)**. Одна фраза о предпочитаемом канале связи + одна о формате первого разговора. Никаких «свяжитесь со мной, и я с радостью…». Опубликовать в `src/content/pages/contact-intro.md`.
 - [ ] **Визуальный обзор `/works/project-04`** в новой типографике на retouched-фото + финальном тексте. Проверка: заголовок, метаданные, концепт-текст и галерея читаются как единое целое; никаких перебоев типографики, никаких visual quirks от смены шрифтов; mobile + desktop.
 - [ ] **Smoke-обход** остальных трёх страниц `/works/project-01`, `/02`, `/03` — на старом placeholder-контенте проверить, что шаблон ничего не сломал (особенно ImageGallery с галереями 3 кадров vs. 4). Регрессия — править шаблон в этом же PR.
-- [ ] **Снять UI-плашку «концепт-проект, фото в обработке»** для project-04 (см. Step 5 этого плана и `isConcept` поле — UI-уровень: компонент `ProjectMeta` или `ProjectCard` показывает плашку по условию, в Phase 4 убирается отображение для retouched project-04; флаг остаётся true как внутренний трекер).
+- ~~[ ] **Снять UI-плашку «концепт-проект, фото в обработке»** для project-04~~ — **REMOVED (Session C pivot 2026-05-27)**. Раз ретушь project-04 отложена, плашка корректно остаётся (Принцип 7). Текущая UI-логика «`isConcept: true` → плашка» работает правильно без правок. Светлана сама снимет галку, когда сделает ретушь и зальёт чистые фото через админку.
+- [ ] **Playwright regression test (T28, reframed)**: плашка видна на `/works/project-04` И на `/works/project-01` (оба `isConcept: true`). Защита от случайного снятия плашки со всех проектов сразу.
 - [ ] PR, Lighthouse CI зелёный, merge.
 
 ### Phase 5 — Constitution update + epic close-out
