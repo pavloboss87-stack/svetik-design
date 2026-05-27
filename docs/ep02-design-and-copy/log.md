@@ -167,3 +167,38 @@
 - Версия `@fontsource/pt-serif@5.2.8` зафиксирована в двух местах: `package.json` (для прод-bundle) и `public/admin/index.html` CDN URL. При апгрейде нужно править оба, иначе admin рассинхронится с прод.
 
 **Следующая сессия**: Session C — Asset retouch (T08 — manual user работа в IOPaint) + Phase 2 PR (T11 — Claude коммит assets). Может идти параллельно с любой техническoй сессией; должна закрыться до Session D (Copy session 1), потому что копирайт project-04 пишется с retouched-кадрами перед глазами.
+
+---
+
+## 2026-05-27 — Session C — pivot: retouch deferred, scope-freeze + guide update
+
+**Изначальная цель сессии**: T08 (manual user — ретушь watermark в IOPaint) + T11 (Claude commits assets + Phase 2 PR merge).
+
+**Решение по pivot (на основе ответа пользователя)**: Phase 2 retouch вынесена за пределы ep02 в зону Светланы (post-launch). Обоснование: ретушь — manual user work по [docs/guide-for-svetlana.md §4](../guide-for-svetlana.md#4-ретушь-watermark-на-фото-проектов), а не Claude-задача; на момент сессии IOPaint у автора не установлен, ретушь не начата. Существующая UI-плашка «Концепт-проект · фото в обработке» (рендерится по `isConcept: true`) — корректное honest framing по Принципу 7, пока кадры с watermark. Session D пишет project-04 с watermark-кадрами как референсом — концепт остаётся концептом, текст описывает то, что есть.
+
+**Что изменилось в скоупе ep02 (документально)**:
+- **T08** → DEFERRED (post-launch, Свeта через guide §4)
+- **T11** → DEFERRED (без retouched-файлов нечего коммитить; новые фото зальёт Светлана сама через админку, когда сделает ретушь — Decap editorial workflow создаст PR без участия Claude)
+- **T19** (снять плашку для project-04) → REMOVED (без ретуши плашка корректно остаётся; UI-логика `isConcept: true → плашка` работает правильно как есть)
+- **T28** → REFRAMED (assertion: плашка видна на ВСЕХ `isConcept: true` проектах — регрессионная защита, что плашку случайно не снимут со всех сразу)
+- **Phase 2** в plan.md → marked deferred
+- **Critical path** в session-plan.md → старая параллельная ветка C→D (retouch блокирует копирайт) снята; Session D начинается сразу после B
+
+**Файлы, обновлённые в Session C**:
+- `docs/ep02-design-and-copy/tasks.md` — T08/T11/T19 deferred/removed, T28 reframed, Waves diagram + Critical Path + Progress Tracker
+- `docs/ep02-design-and-copy/plan.md` — Step 1 MVP scope, Phase 2 deferred header + warning block, Phase 4 без T19
+- `docs/ep02-design-and-copy/session-plan.md` — карта сессий, critical path, Session C промпт переписан в pivot-режим (старый бриф сохранён в HTML-комментарии), Session D pre-flight, Session E без T19, Session F с reframed T28, таблица «Особенности ep02»
+- `docs/guide-for-svetlana.md` — **новая секция §3 «Что вставлять в качестве примеров проекта»** (Что считать проектом / Честность и фрейминг / Структура одного проекта / Сколько проектов держать / Текущее состояние портфолио). Существующие секции renumbered §3→§4 (ретушь), §4→§5 (фото-prep), §5→§6 (копирайт), §6→§7 (Telegram), §7→§8 (email), §8→§9 (домен), §9→§10 (подключение), §10→§11 (резервный план), §11→§12 (branch protection). TOC + intra-doc cross-refs обновлены.
+- `CLAUDE.md` — `## Epics` строка ep02: outcome формулировка адаптирована под deferred retouch (open debt Светланы, ссылка на guide §4).
+
+**Что НЕ изменилось** (важно):
+- Constitution Принципы 1–7 — без правок (Принцип 7 даже усилен: концепт-плашка корректно остаётся как маркер честности, а не убирается «потому что мы pilot оформили»).
+- ep02 status в CLAUDE.md остаётся `🔄 Active` — материальная работа эпика не закончена, осталось Sessions D/E/F/G (копирайт + verify + closeout).
+- Фактические кадры `src/assets/projects/project-04/01..04.jpg` — НЕ трогали (watermark остаётся, имена прежние).
+- Никакой код не менялся — только docs + CLAUDE.md.
+
+**Открытый долг по выходу ep02** (фиксируется здесь, чтобы Session G — closeout — закрыл его правильно в финальном log entry):
+1. Внешняя редактура «v1»-текстов Hero/About/services/contact/project-04 — параллельный поток после ep02, см. plan.md Step 11.
+2. Ретушь watermark project-04 (4 кадра) — work Светланы по [guide §4](../guide-for-svetlana.md#4-ретушь-watermark-на-фото-проектов). До выполнения проект корректно отображается с плашкой «Концепт-проект».
+
+**Следующая сессия**: Session D — Copy session 1 (Hero + About + project-04). Pre-flight: Sessions A+B+C на main, никакой retouch-зависимости.

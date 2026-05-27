@@ -145,9 +145,11 @@
 
 ---
 
-### [T08] Batch-ретушь watermark на 4 кадрах project-04
+### [T08] Batch-ретушь watermark на 4 кадрах project-04 — DEFERRED (Session C pivot, 2026-05-27)
 
-- **Phase**: 2 — Ретушь watermark pilot
+> **Status**: **DEFERRED to post-launch** per Session C pivot 2026-05-27 — см. [log.md](log.md). project-04 остаётся с watermark Homestyler; UI-плашка «Концепт-проект · фото в обработке» (рендерится по `isConcept: true`) — корректное honest framing по Принципу 7 до тех пор, пока Светлана сама не пройдёт ретушь по [docs/guide-for-svetlana.md §3](../guide-for-svetlana.md#3-ретушь-watermark-на-фото-проектов). Когда она это сделает (отдельный поток после публичного запуска ep03) — она же снимет галку `isConcept` в админке, плашка пропадёт автоматически. **Бриф оставлен ниже для истории.**
+
+- **Phase**: 2 — Ретушь watermark pilot (фаза целиком deferred)
 - **Type**: data (manual)
 - **Depends on**: T03
 - **Input**: оригиналы 4 кадров project-04 (`Portfolio/4/*.jpg` или текущие `src/assets/projects/project-04/01..04.jpg` с watermark Homestyler)
@@ -208,9 +210,11 @@
 
 ---
 
-### [T11] Phase 2 PR — replace project-04 assets, merge
+### [T11] Phase 2 PR — replace project-04 assets, merge — DEFERRED (Session C pivot, 2026-05-27)
 
-- **Phase**: 2 — Ретушь watermark pilot
+> **Status**: **DEFERRED to post-launch** вместе с T08. Без retouched-файлов нечего коммитить. Когда Светлана пройдёт ретушь самостоятельно (см. T08 note выше) — она зальёт новые файлы через админку (`/admin/` → Проекты → project-04 → galleries `Choose an image` → удалить старые, загрузить новые → snь галку `isConcept`). Это создаст PR через Decap editorial workflow; ничего ручного от Claude не требуется. **Бриф оставлен ниже для истории.**
+
+- **Phase**: 2 — Ретушь watermark pilot (фаза целиком deferred)
 - **Type**: data
 - **Depends on**: T08
 - **Input**: 4 retouched JPEG из T08; текущий `src/content/projects/project-04.md` с путями `cover` и `gallery`
@@ -377,9 +381,11 @@
 
 ---
 
-### [T19] Снять UI-плашку «концепт-проект, фото в обработке» для project-04
+### [T19] Снять UI-плашку «концепт-проект, фото в обработке» для project-04 — REMOVED (Session C pivot, 2026-05-27)
 
-- **Phase**: 4 — Копирайт-сессия 2
+> **Status**: **REMOVED from ep02 scope** — основания нет. Раз ретушь project-04 отложена (T08 deferred), кадры остаются с watermark, и плашка «фото в обработке» — корректное honest framing (Принцип 7). Существующая UI-логика (`isConcept: true` → плашка) работает правильно, доп. поле `showConceptBadge` / `retouched` в схему вводить не нужно. Когда Светлана снимет watermark и обновит фото через админку, она же снимет галку `isConcept` — плашка пропадёт без нашего участия. **Бриф оставлен ниже для истории.**
+
+- **Phase**: 4 — Копирайт-сессия 2 (T19 не выполняется)
 - **Type**: ui
 - **Depends on**: T15
 - **Input**: компонент UI, отображающий плашку (предположительно `src/components/projects/ProjectMeta.astro` или `ProjectCard.astro` — уточнить grep'ом по строке плашки в коде)
@@ -558,54 +564,58 @@
 
 ---
 
-### [T28] Playwright assertion — концепт-плашка на project-04 vs остальные
+### [T28] Playwright assertion — концепт-плашка на всех 4 проектах (REFRAMED, Session C pivot 2026-05-27)
+
+> **Reframed**: до pivot T28 был «плашка отсутствует на project-04 (retouched-pilot) vs присутствует на остальных». После pivot — все 4 проекта остаются `isConcept: true` с watermark, плашка должна быть видна на всех. T28 теперь — регрессионная защита, что плашка корректно рендерится по `isConcept: true` (защита от случайного снятия плашки со всех проектов сразу или поломки UI-логики).
 
 - **Phase**: 4 — Копирайт-сессия 2
 - **Type**: test
-- **Depends on**: T19
+- **Depends on**: T10 (typography merge — плашка-компонент существует ещё с ep01, отдельной T19-задачи нет)
 - **Input**: [tests/e2e/pages.spec.ts](../../tests/e2e/pages.spec.ts) (расширить) или новый файл `tests/e2e/concept-badge.spec.ts`
-- **Output**: Playwright-спек, утверждающий, что плашка «концепт-проект, фото в обработке» **отсутствует** на `/works/project-04` и **присутствует** на `/works/project-01`
+- **Output**: Playwright-спек, утверждающий, что плашка «концепт-проект, фото в обработке» **присутствует** на `/works/project-04` И на `/works/project-01` (оба `isConcept: true`)
 - **Acceptance criteria**:
-  - [ ] Спек открывает `/works/project-04`, читает DOM, утверждает отсутствие строки плашки (точная строка — взять из текущего шаблона компонента, найденного при T19)
-  - [ ] Тот же спек открывает `/works/project-01`, утверждает наличие той же строки плашки
-  - [ ] Спек проходит после T19; временно откатив изменение T19 (например, убрав условие на retouched-метку) — спек краснеет на `/works/project-04`
+  - [ ] Спек открывает `/works/project-04`, утверждает наличие плашки (через `data-testid="concept-badge"` — добавить в компонент в этой же задаче, если ещё не было; либо через точный текст плашки)
+  - [ ] Тот же спек открывает `/works/project-01`, утверждает наличие той же плашки
+  - [ ] Negative test: временно переключив `isConcept: false` в frontmatter project-04 — спек краснеет на `/works/project-04` (плашка пропала); восстановить `isConcept: true` — снова зелёный
   - [ ] `pnpm test:e2e` зелёный
 - **Tests required**:
   - [ ] Сам по себе test
   - [ ] Negative regression (см. acceptance)
-- **Constitution check**: Rule 7 (автоматическая защита от случайного возврата плашки на retouched-pilot или случайного снятия плашки со всех проектов сразу)
-- **Implementation notes**: ~15 строк spec'а. Селектор для плашки — лучше через `data-testid="concept-badge"` (добавить в компонент при T19), чем по тексту — текст может измениться при редактуре.
+- **Constitution check**: Rule 7 (автоматическая защита от случайного снятия плашки со всех проектов сразу — без неё рендер концепта как реального объекта возможен по неосторожности)
+- **Implementation notes**: ~15 строк spec'а. Селектор — `data-testid="concept-badge"`, не текст (текст может ещё меняться). Если в текущем компоненте `data-testid` нет — добавить точечной правкой компонента в той же ветке.
 
 ---
 
 ## Step 4 — Execution Order (Waves)
 
+> **Pivot 2026-05-27 (Session C)**: T03/T08/T11 (Phase 2 retouch) — deferred to post-launch (Svetlana's owned task через [guide §3](../guide-for-svetlana.md#3-ретушь-watermark-на-фото-проектов)). T19 — removed (без ретуши плашка корректно остаётся). T28 — reframed: проверяет что плашка видна на всех `isConcept: true` проектах (регрессионная защита). Waves ниже отражают post-pivot план.
+
 ```
 ── Wave 1 (no dependencies) ──────────────────────────────────────
    T01: Замена Fraunces → PT Serif (cyrillic-only)
    T02: tokens.css финальная шкала
-   T03: IOPaint local setup (manual user)
    T26: Stop-list grep gate в CI           (hardening)
    T27: PR template с copy-debt checklist  (hardening)
+   ~~T03~~: IOPaint local setup — DEFERRED (Svetlana's post-launch task)
 
 ── Wave 2 (← Wave 1) ─────────────────────────────────────────────
    T04: Fonttools cyrillic check       ← T01
    T05: Layout.astro preload-hints     ← T01
    T06: admin/index.html font sync     ← T01
    T07: Hero.astro Schema 1            ← T02
-   T08: Batch retouch project-04       ← T03  (parallel manual)
+   ~~T08~~: Batch retouch project-04 — DEFERRED
 
 ── Wave 3 (← Wave 2 partial) ─────────────────────────────────────
    T09: typography.spec.ts             ← T01, T07
 
 ── Wave 4 (← Waves 2+3) ──────────────────────────────────────────
    T10: Phase 1 PR + Lighthouse + merge  ← T01,T02,T04,T05,T06,T07,T09,T26,T27
-   T11: Phase 2 PR + retouched assets    ← T08
+   ~~T11~~: Phase 2 PR + retouched assets — DEFERRED
 
 ── Wave 5 (← Wave 4 — Phase 3 copy session, in one sitting) ─────
-   T12: Hero copy                       ← T10, T11
-   T13: About copy                      ← T10, T11
-   T14: project-04 summary + concept    ← T10, T11
+   T12: Hero copy                       ← T10
+   T13: About copy                      ← T10
+   T14: project-04 summary + concept    ← T10  (watermark-кадры как референс)
 
 ── Wave 6 (← Wave 5) ─────────────────────────────────────────────
    T15: Editorial review + Phase 3 PR merge   ← T12, T13, T14
@@ -614,15 +624,15 @@
    T16: Services intro                  ← T15
    T17: 3 service bodies                ← T15
    T18: Contact intro                   ← T15
-   T19: Remove "концепт-проект" badge   ← T15
+   ~~T19~~: Remove badge for project-04 — REMOVED
 
 ── Wave 8 (← Wave 7) ─────────────────────────────────────────────
-   T20: Visual review /works/project-04 ← T11, T14, T17, T19
-   T21: Smoke obhod project-01/02/03    ← T10, T11 (parallel with T20)
-   T28: Playwright badge assertion      ← T19 (hardening, parallel with T20/T21)
+   T20: Visual review /works/project-04 ← T14, T17  (concept text + plашка должна остаться видна)
+   T21: Smoke obhod project-01/02/03    ← T10 (parallel with T20)
+   T28: Playwright badge assertion      ← T10 (плашка на всех isConcept-проектах; hardening, parallel with T20/T21)
 
 ── Wave 9 (← Wave 8) ─────────────────────────────────────────────
-   T22: Phase 4 PR — merge              ← T16, T17, T18, T19, T20, T21, T28
+   T22: Phase 4 PR — merge              ← T16, T17, T18, T20, T21, T28
 
 ── Wave 10 (← Wave 9 — Phase 5 close-out) ───────────────────────
    T23: CLAUDE.md status → Done         ← T22
@@ -647,21 +657,26 @@ T01 → T07 → T09 → T10 → T12 → T15 → T17 → T20 → T22 → T23 → 
 
 11 sequential tasks на критическом пути. Любая задержка любой из них = задержка всего ep02.
 
+> **После pivot 2026-05-27 (Session C)** параллельная ветка T03→T08→T11 (Phase 2 retouch) удалена — Phase 3 копирайт-сессия пишет project-04 с watermark-кадрами как референсом (концепт остаётся концептом, текст описывает то, что есть).
+
 Параллельные ветки, которые могут смягчить нагрузку:
-- **T03 → T08 → T11** (Phase 2 ретушь) идёт параллельно с T01..T07; должна закрыться до T12, иначе Phase 3 копирайт-сессия не получит визуальный референс.
-- **T26, T27** в Wave 1 — параллельны T01/T02/T03 (hardening, не зависят от шрифтов; должны быть смёрджены до T15 — Editorial review должна иметь рабочий stop-list grep и PR template).
+- **T26, T27** в Wave 1 — параллельны T01/T02 (hardening, не зависят от шрифтов; должны быть смёрджены до T15 — Editorial review должна иметь рабочий stop-list grep и PR template).
 - **T13, T14** в Wave 5 — параллельны T12 (одна сессия копирайта; не critical, но в одной сидячей пишутся синхронно).
-- **T16, T18, T19** в Wave 7 — параллельны T17.
+- **T16, T18** в Wave 7 — параллельны T17.
 - **T21, T28** в Wave 8 — параллельны T20.
 - **T24** в Wave 10 — параллельна T23.
 
-🟡 **Important** (имеет dependents, но slack есть): T02 (tokens), T04 (cyrillic check), T11 (Phase 2 merge), T19 (badge removal), T26 (stop-list grep — должен сработать на T15).
+🟡 **Important** (имеет dependents, но slack есть): T02 (tokens), T04 (cyrillic check), T26 (stop-list grep — должен сработать на T15).
 
 🟢 **Flexible** (можно переставить или отложить): T06 (admin sync — можно отложить до Phase 4, но логичнее в Phase 1), T21 (smoke может уехать в Phase 5), T27 (PR template — желательно к T15, но не блокирует).
+
+⚫ **Deferred / removed (Session C pivot 2026-05-27)**: T03, T08, T11 (Phase 2 retouch — Svetlana's post-launch task через [guide §3](../guide-for-svetlana.md#3-ретушь-watermark-на-фото-проектов)). T19 (badge removal — без ретуши плашка корректно остаётся).
 
 ---
 
 ## Step 6 — Progress Tracker
+
+> **Pivot 2026-05-27 (Session C)**: T03, T08, T11 → DEFERRED to Svetlana's post-launch work (через [guide §3](../guide-for-svetlana.md#3-ретушь-watermark-на-фото-проектов)). T19 → REMOVED (без ретуши плашка корректно остаётся). T28 → REFRAMED («плашка видна на всех `isConcept: true` проектах»). Чекбоксы выкрученных задач помечены `[~]` (out of scope).
 
 ```markdown
 ## Progress Tracker — ep02-design-and-copy
@@ -669,7 +684,7 @@ T01 → T07 → T09 → T10 → T12 → T15 → T17 → T20 → T22 → T23 → 
 ### Wave 1
 - [x] T01: Замена Fraunces → PT Serif (cyrillic-only)
 - [x] T02: tokens.css финальная шкала
-- [ ] T03: IOPaint local setup (manual)
+- [~] T03: IOPaint local setup (manual) — DEFERRED (Svetlana's post-launch)
 - [x] T26: Stop-list grep gate в CI (hardening)
 - [x] T27: PR template с copy-debt checklist (hardening)
 
@@ -678,19 +693,19 @@ T01 → T07 → T09 → T10 → T12 → T15 → T17 → T20 → T22 → T23 → 
 - [x] T05: Layout.astro preload-hints
 - [x] T06: admin/index.html font sync
 - [x] T07: Hero.astro Schema 1 typographic
-- [ ] T08: Batch retouch project-04 (manual)
+- [~] T08: Batch retouch project-04 (manual) — DEFERRED
 
 ### Wave 3
 - [x] T09: typography.spec.ts regression test
 
 ### Wave 4
 - [x] T10: Phase 1 PR — Lighthouse + merge
-- [ ] T11: Phase 2 PR — retouched assets + merge
+- [~] T11: Phase 2 PR — retouched assets + merge — DEFERRED
 
 ### Wave 5 (Phase 3 copy session — one sitting)
 - [ ] T12: Hero copy
 - [ ] T13: About copy
-- [ ] T14: project-04 summary + concept
+- [ ] T14: project-04 summary + concept (watermark-кадры остаются — текст описывает концепт)
 
 ### Wave 6
 - [ ] T15: Editorial review + Phase 3 PR merge
@@ -699,12 +714,12 @@ T01 → T07 → T09 → T10 → T12 → T15 → T17 → T20 → T22 → T23 → 
 - [ ] T16: Services intro
 - [ ] T17: 3 service bodies
 - [ ] T18: Contact intro
-- [ ] T19: Снять «концепт-проект» плашку для project-04
+- [~] T19: Снять «концепт-проект» плашку для project-04 — REMOVED
 
 ### Wave 8
-- [ ] T20: Визуальный обзор /works/project-04
+- [ ] T20: Визуальный обзор /works/project-04 (плашка остаётся видна)
 - [ ] T21: Smoke project-01/02/03
-- [ ] T28: Playwright badge assertion (hardening)
+- [ ] T28: Playwright badge assertion — плашка на всех isConcept (hardening, reframed)
 
 ### Wave 9
 - [ ] T22: Phase 4 PR — merge
