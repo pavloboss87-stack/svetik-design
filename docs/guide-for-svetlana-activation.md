@@ -18,14 +18,14 @@
       в репозиторий `pavloboss87-stack/svetik-design` (брат добавит).
       Проверка: можешь зайти в [github.com/pavloboss87-stack/svetik-design](https://github.com/pavloboss87-stack/svetik-design) под своим логином.
 
-- [ ] **2. Логин в админку** — открыла `https://svetik-design.pages.dev/admin/`,
+- [ ] **2. Логин в админку** — открыла `https://svetik-design.svetik-design.workers.dev/admin/`,
       нажала «Login with GitHub», авторизовалась, увидела 9 разделов слева.
       → [гайд § 2.1](guide-for-svetlana.md#21-первый-вход)
 
 - [ ] **3. Тестовая правка** — открыла `Главная — Hero`, поменяла одну
       букву в тексте, **Save**, открыла PR в GitHub, дождалась зелёного CI,
       нажала **Merge pull request**, через 5 минут увидела изменение на
-      `https://svetik-design.pages.dev/`. Тестовую букву вернула обратно тем
+      `https://svetik-design.svetik-design.workers.dev/`. Тестовую букву вернула обратно тем
       же путём. → [гайд § 2.4](guide-for-svetlana.md#24-как-править-существующий-проект)
 
 ## Telegram-бот заявок (4–6)
