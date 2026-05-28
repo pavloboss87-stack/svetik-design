@@ -6,35 +6,73 @@ if (!entry) throw new Error('pages/hero entry not found');
 const { Content } = await render(entry);
 ---
 
-<section class="border-b border-neutral-200 bg-white">
+<section class="hero-section">
   <div class="mx-auto max-w-3xl px-6 py-24 md:py-32">
+    <div class="hero-eyebrow-row">
+      <p class="hero-eyebrow">Дизайн интерьеров</p>
+      <p class="hero-numbering">№ 01 · 2026</p>
+    </div>
+    <hr class="hero-hairline" aria-hidden="true" />
+
     <h1 class="hero-title">{entry.data.title}</h1>
+
     <div class="hero-body prose prose-neutral mt-8">
       <Content />
     </div>
+
     <p class="mt-12">
       <a class="hero-cta" href="/works" data-testid="hero-cta">
         Смотреть работы
         <span aria-hidden="true">→</span>
       </a>
     </p>
+
+    <p class="hero-location">Москва · Подмосковье</p>
   </div>
 </section>
 
-<!--
-  ep02 T07 — Schema 1 (typographic) калибровка. Размеры/leading/tracking — токены
-  из src/styles/tokens.css. h1 ограничен по ширине ~16ch (≈10–12 слов в строке на
-  desktop), body — стандартный prose-предел. clamp() на h1 предотвращает overflow
-  на 360px без отдельной media-query. Финальный текст приедет в T12 (Session D).
--->
 <style>
+  .hero-section {
+    background-color: var(--paper);
+  }
+
+  .hero-eyebrow-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+  }
+
+  .hero-eyebrow {
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .hero-numbering {
+    color: var(--accent-neutral);
+    margin: 0;
+  }
+
+  .hero-hairline {
+    width: 4ch;
+    border: 0;
+    border-top: 1px solid var(--border-hairline);
+    margin: var(--space-3) 0 var(--space-12);
+  }
+
   .hero-title {
     font-family: var(--font-display);
     color: var(--ink);
-    font-size: clamp(2.25rem, 7vw, var(--text-display));
+    font-size: clamp(3rem, 10vw, 5.5rem);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
     max-width: 16ch;
+    margin: 0;
   }
 
   .hero-body {
@@ -65,5 +103,16 @@ const { Content } = await render(entry);
   .hero-cta:hover,
   .hero-cta:focus-visible {
     text-decoration-color: var(--ink);
+  }
+
+  .hero-location {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent-neutral);
+    text-align: right;
+    margin: var(--space-24) 0 0;
   }
 </style>
