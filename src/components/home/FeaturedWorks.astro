@@ -39,7 +39,11 @@ const PAPER_TONES = [
                 style={`background-color: ${tone}`}
                 data-testid="featured-card"
               >
-                {data.isConcept && <span class="featured-badge">Концепт · фото в обработке</span>}
+                {data.isConcept && (
+                  <span class="featured-badge" data-testid="featured-badge">
+                    Концепт · фото в обработке
+                  </span>
+                )}
                 <div class="featured-card-body">
                   <h3 class="featured-card-title">{data.title}</h3>
                   <p class="featured-card-meta">

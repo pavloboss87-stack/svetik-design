@@ -17,6 +17,7 @@ test('GET / → FeaturedWorks badge "Концепт" visible on all 4 cards (all
   page,
 }) => {
   await page.goto('/');
-  const badges = page.locator('[data-testid="featured-card"] >> text=/^Концепт/');
+  const badges = page.locator('[data-testid="featured-badge"]');
   await expect(badges).toHaveCount(4);
+  await expect(badges.first()).toContainText('Концепт');
 });
