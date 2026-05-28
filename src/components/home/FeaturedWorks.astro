@@ -1,0 +1,173 @@
+---
+import { getCollection } from 'astro:content';
+import { isPublishedProject, sortProjects } from '../../lib/sortProjects';
+import { formatArea, formatYear, localeProjectType } from '../../lib/format';
+
+const projects = sortProjects((await getCollection('projects')).filter(isPublishedProject)).slice(
+  0,
+  4,
+);
+
+// Шахматная диагональ paper-оттенков: позиции 0,3 → tan; 1,2 → stone.
+// На 2×2 desktop grid читается как два tan по одной диагонали и два stone
+// по другой. На mobile (1 col stack) — чередование tan/stone сверху вниз.
+const PAPER_TONES = [
+  'var(--paper-tan)',
+  'var(--paper-stone)',
+  'var(--paper-stone)',
+  'var(--paper-tan)',
+] as const;
+---
+
+<section class="featured-section">
+  <div class="mx-auto max-w-5xl px-6 py-20 md:py-28">
+    <header class="featured-header">
+      <h2 class="featured-title">Работы</h2>
+      <p class="featured-meta">№ 01–04 · 2026</p>
+    </header>
+
+    <ul class="featured-grid">
+      {
+        projects.map((project, index) => {
+          const { data, id } = project;
+          const tone = PAPER_TONES[index] ?? 'var(--paper-tan)';
+          return (
+            <li>
+              <a
+                class="featured-card"
+                href={`/works/${id}/`}
+                style={`background-color: ${tone}`}
+                data-testid="featured-card"
+              >
+                {data.isConcept && <span class="featured-badge">Концепт · фото в обработке</span>}
+                <div class="featured-card-body">
+                  <h3 class="featured-card-title">{data.title}</h3>
+                  <p class="featured-card-meta">
+                    {localeProjectType(data.type)} · {formatArea(data.area)} ·{' '}
+                    {formatYear(data.year)}
+                  </p>
+                  {data.location && <p class="featured-card-location">{data.location}</p>}
+                </div>
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .featured-section {
+    background-color: var(--paper-deeper);
+  }
+
+  .featured-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-12);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-hairline);
+  }
+
+  .featured-title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .featured-meta {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent-neutral);
+    margin: 0;
+  }
+
+  .featured-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    .featured-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
+    }
+  }
+
+  .featured-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 18rem;
+    padding: var(--space-8);
+    color: var(--ink);
+    text-decoration: none;
+    transition: background-color 200ms ease;
+  }
+
+  .featured-card:hover,
+  .featured-card:focus-visible {
+    background-color: var(--paper-deeper) !important;
+  }
+
+  .featured-badge {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--ink);
+    background-color: var(--paper);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .featured-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .featured-card-title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .featured-card-meta {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--accent-neutral);
+    margin: 0;
+  }
+
+  .featured-card-location {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent-neutral);
+    margin: 0;
+  }
+</style>
