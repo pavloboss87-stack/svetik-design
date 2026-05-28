@@ -1,0 +1,96 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { formatArea, formatYear, localeProjectType } from '../../lib/format';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  tone: string;
+}
+
+const { project, tone } = Astro.props;
+const { data, id } = project;
+const href = `/works/${id}/`;
+---
+
+<a class="work-card" href={href} style={`background-color: ${tone}`} data-testid="work-card">
+  {
+    data.isConcept && (
+      <span class="work-card-badge" data-testid="work-card-badge">
+        Концепт · фото в обработке
+      </span>
+    )
+  }
+  <div class="work-card-body">
+    <h2 class="work-card-title">{data.title}</h2>
+    <p class="work-card-meta">
+      {localeProjectType(data.type)} · {formatArea(data.area)} · {formatYear(data.year)}
+    </p>
+    {data.location && <p class="work-card-location">{data.location}</p>}
+  </div>
+</a>
+
+<style>
+  .work-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 18rem;
+    padding: var(--space-8);
+    color: var(--ink);
+    text-decoration: none;
+    transition: background-color 200ms ease;
+  }
+
+  .work-card:hover,
+  .work-card:focus-visible {
+    background-color: var(--paper-deeper) !important;
+  }
+
+  .work-card-badge {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--ink);
+    background-color: var(--paper);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .work-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .work-card-title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .work-card-meta {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--accent-neutral);
+    margin: 0;
+  }
+
+  .work-card-location {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent-neutral);
+    margin: 0;
+  }
+</style>

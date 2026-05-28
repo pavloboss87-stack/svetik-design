@@ -60,7 +60,7 @@ src/
 │   └── about/              # placeholder.jpg для authorPhoto
 ├── components/
 │   ├── layout/             # Layout + Header + Footer
-│   ├── home/               # Hero + ManifestoBlock + TelegramFeed
+│   ├── home/               # Hero + TelegramFeed
 │   ├── projects/           # ProjectCard + ProjectMeta + ImageGallery
 │   ├── services/           # ServiceCard
 │   ├── contact/            # ContactChannels + ContactForm (vanilla JS, no React)

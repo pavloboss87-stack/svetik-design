@@ -1,33 +1,39 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../../components/layout/Layout.astro';
-import ProjectCard from '../../components/projects/ProjectCard.astro';
+import WorkCard from '../../components/projects/WorkCard.astro';
 import { isPublishedProject, sortProjects } from '../../lib/sortProjects';
 
 const projects = sortProjects((await getCollection('projects')).filter(isPublishedProject));
+
+// Шахматный паттерн paper-тонов по index % 4: позиции 0,3 → tan; 1,2 → stone.
+// При >4 проектах паттерн повторяется. Совпадает с FeaturedWorks (главная).
+const PAPER_TONES = [
+  'var(--paper-tan)',
+  'var(--paper-stone)',
+  'var(--paper-stone)',
+  'var(--paper-tan)',
+] as const;
 ---
 
 <Layout
   title="Работы — Светлана Головина"
   description="Концепт-проекты квартир, студии и небольшого дома. Визуализации в Homestyler с watermark, описания пишутся."
 >
-  <section class="mx-auto max-w-6xl px-6 py-16 md:py-24">
-    <header class="mb-12 max-w-2xl">
-      <h1 class="font-display text-4xl tracking-tight text-neutral-900 md:text-5xl">Работы</h1>
-      <p class="mt-4 text-base text-neutral-700">
-        Четыре концепт-проекта. Фото подписаны watermark и заменяются после ретуши; тексты автор
-        пишет по ходу.
-      </p>
+  <section class="mx-auto max-w-5xl px-6 py-20 md:py-28">
+    <header class="works-header">
+      <h1 class="works-title">Работы</h1>
+      <p class="works-meta">№ 01–{String(projects.length).padStart(2, '0')} · 2026</p>
     </header>
 
     {
       projects.length === 0 ? (
-        <p class="text-neutral-700">Проекты в работе. Скоро появятся.</p>
+        <p class="works-empty">Проекты в работе. Скоро появятся.</p>
       ) : (
-        <ul class="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
+        <ul class="works-grid">
+          {projects.map((project, index) => (
             <li>
-              <ProjectCard project={project} />
+              <WorkCard project={project} tone={PAPER_TONES[index % 4]} />
             </li>
           ))}
         </ul>
@@ -35,3 +41,56 @@ const projects = sortProjects((await getCollection('projects')).filter(isPublish
     }
   </section>
 </Layout>
+
+<style>
+  .works-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-12);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-hairline);
+  }
+
+  .works-title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .works-meta {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent-neutral);
+    margin: 0;
+  }
+
+  .works-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    .works-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
+    }
+  }
+
+  .works-empty {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    color: var(--ink);
+  }
+</style>

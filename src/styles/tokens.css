@@ -46,10 +46,16 @@
   --space-24: 6rem; /* 96px */
   --space-32: 8rem; /* 128px */
 
-  /* Palette — минимум: ink / paper / один нейтральный акцент для границ и
-     метаданных. Цвета подобраны под editorial-серif: тёплый off-white фон,
-     не пюрный чёрный текст. */
+  /* Palette — тёплая paper-гамма для editorial-серif регистра PT Serif + Inter.
+     Все paper-тона в одной yellow-ish gamma, варьируется только lightness:
+     cream (global body bg) → stone/tan (карточки Featured-блока в шахматке)
+     → deeper (фон Featured-секции, чтобы секция «вырубалась» из cream-фона).
+     --ink не пюрный чёрный — мягче на тёплом фоне. */
   --ink: #1a1a1a;
-  --paper: #fafaf8;
+  --paper: #f5f0e6; /* warm cream — global body bg, Hero */
+  --paper-tan: #ebe3d3; /* warm tan — карточки P01, P04 (Featured-диагональ) */
+  --paper-stone: #e8e1d2; /* warm stone — карточки P02, P03 (Featured-диагональ) */
+  --paper-deeper: #ddd3bf; /* deeper warm — фон Featured-секции */
   --accent-neutral: #a8a39b;
+  --border-hairline: #d4cebe; /* тонкая декоративная линия в Hero / Featured */
 }
